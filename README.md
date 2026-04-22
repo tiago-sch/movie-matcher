@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# MovieMatcher
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Tell it how you feel. It finds your film.
 
-Currently, two official plugins are available:
+MovieMatcher interprets your emotional state — not just genre preferences — and recommends movies that match your mood, energy, and watching context using Google Gemini AI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**[tiagoschmidt.com](https://www.tiagoschmidt.com/) · [GitHub](https://github.com/tiago-sch/)**
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How it works
 
-## Expanding the ESLint configuration
+Instead of browsing genres, you describe how you feel. The app combines:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Free-text mood input** — write anything: *"comforting but not childish"*, *"smart but not heavy"*, *"chaotic and stylish"*
+- **Mood sliders** — dial in energy (calm ↔ intense), tone (hopeful ↔ dark), and pace (slow ↔ fast)
+- **Watching context** — alone / date night / with friends / background watch
+- **Mental state** — tired / curious / overstimulated / emotional
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Gemini interprets all of this together and returns:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- A **mood summary** — what your emotional state actually calls for
+- **3 curated picks** — each with a "why this matches you", energy/warmth scores, and emotional tags
+- **Alternatives** — safer, bolder, and weirder options alongside the main picks
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Movie posters are fetched from TMDB (optional).
+
+---
+
+## Stack
+
+- **React 19** + **TypeScript** + **Vite**
+- **Tailwind CSS v4**
+- **Framer Motion** — card entrance animations, loading state
+- **Google Gemini** (`gemini-2.5-flash`) — mood interpretation and recommendations
+- **TMDB API** — movie posters (optional)
+- Custom i18n — English and Brazilian Portuguese, no external library
+
+---
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Configure environment variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+Open `.env` and fill in your keys:
+
+```env
+# Required — https://aistudio.google.com/app/apikey
+VITE_GEMINI_API_KEY=
+
+# Optional — https://www.themoviedb.org/settings/api
+# Without this, cards render without poster images
+VITE_TMDB_API_KEY=
+```
+
+### 3. Run
+
+```bash
+npm run dev
+```
+
+---
+
+## Project structure
+
+```
+src/
+  api/
+    gemini.ts       # Gemini API call + availability check
+    tmdb.ts         # TMDB poster fetching
+  components/
+    MoodForm.tsx    # Mood input form (text, sliders, chips)
+    MovieCard.tsx   # Main card + alternative card
+    Results.tsx     # Results layout (summary, picks, alternatives)
+    LoadingState.tsx
+    SliderInput.tsx
+  i18n/
+    translations.ts # EN and PT-BR strings
+    context.tsx     # LocaleProvider + useLocale hook
+  types.ts
+  App.tsx
+```
+
+---
+
+## i18n
+
+The app ships with **English** and **Brazilian Portuguese**. Toggle with the `PT` / `EN` button in the top-right corner. Prompts sent to Gemini are always in English regardless of the selected locale.
+
+To add a new language, implement the `T` interface in `src/i18n/translations.ts` and add the locale to the `Locale` type.
