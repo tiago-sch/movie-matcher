@@ -1,5 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { MoodInputs, RecommendationResponse } from '../types';
+import type { Locale } from '../i18n/translations';
+
+const LANGUAGE_INSTRUCTIONS: Record<Locale, string> = {
+  'en': 'Respond in English.',
+  'pt-BR': 'Responda em português do Brasil.',
+};
 
 const SYSTEM_PROMPT = `You are a cinematic mood interpreter. You analyze emotional states, energy levels, and viewing contexts to recommend movies that deeply resonate with how someone feels right now — not just genre preferences.
 
@@ -53,14 +59,28 @@ export async function checkAvailability(): Promise<AvailabilityStatus> {
   }
 }
 
-export async function getRecommendations(mood: MoodInputs): Promise<RecommendationResponse> {
+export class GeminiApiError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'GeminiApiError';
+  }
+}
+
+export class GeminiParseError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'GeminiParseError';
+  }
+}
+
+export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'): Promise<RecommendationResponse> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error('VITE_GEMINI_API_KEY is not set');
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
-    systemInstruction: SYSTEM_PROMPT,
+    systemInstruction: `${SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTIONS[locale]}`,
   });
 
   const sliderDescriptions = {
@@ -79,10 +99,20 @@ export async function getRecommendations(mood: MoodInputs): Promise<Recommendati
     mood.mentalState ? `Mental state: ${mood.mentalState}` : '',
   ].filter(Boolean).join('\n');
 
-  const result = await model.generateContent(userMessage);
-  const text = result.response.text().trim();
+  let text: string;
+  try {
+    const result = await model.generateContent(userMessage);
+    text = result.response.text().trim();
+  } catch (err) {
+    throw new GeminiApiError('Gemini API call failed', err);
+  }
 
   // Strip markdown code fences if the model wraps the JSON anyway
   const json = text.startsWith('```') ? text.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '') : text;
-  return JSON.parse(json) as RecommendationResponse;
+
+  try {
+    return JSON.parse(json) as RecommendationResponse;
+  } catch (err) {
+    throw new GeminiParseError('Failed to parse Gemini response', err);
+  }
 }

@@ -35,6 +35,11 @@ export interface T {
   weirderDesc: string;
   startOver: string;
   tryAgain: string;
+  errors: {
+    parse: string;
+    api: string;
+    generic: string;
+  };
   energyLabel: string;
   warmthLabel: string;
   footerMadeBy: string;
@@ -97,6 +102,11 @@ export const translations: Record<Locale, T> = {
     weirderDesc: 'Fully commit to the vibe',
     startOver:   'Start over',
     tryAgain:    'Try again',
+    errors: {
+      parse:   'The AI returned an unexpected response. Please try again.',
+      api:     'The Gemini API returned an error. Check your API key or try again later.',
+      generic: 'Something went wrong. Please try again.',
+    },
     energyLabel: 'Energy',
     warmthLabel: 'Warmth',
     footerMadeBy: 'Made by',
@@ -158,6 +168,11 @@ export const translations: Record<Locale, T> = {
     weirderDesc: 'Mergulhe de cabeça no clima',
     startOver:   'Começar de novo',
     tryAgain:    'Tentar novamente',
+    errors: {
+      parse:   'A IA retornou uma resposta inesperada. Tente novamente.',
+      api:     'A API do Gemini retornou um erro. Verifique sua chave de API ou tente mais tarde.',
+      generic: 'Algo deu errado. Tente novamente.',
+    },
     energyLabel: 'Energia',
     warmthLabel: 'Calor',
     footerMadeBy: 'Feito por',

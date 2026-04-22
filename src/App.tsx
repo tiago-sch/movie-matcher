@@ -5,7 +5,7 @@ import type { Locale } from './i18n/translations';
 import { MoodForm } from './components/MoodForm';
 import { LoadingState } from './components/LoadingState';
 import { Results } from './components/Results';
-import { getRecommendations, checkAvailability, type AvailabilityStatus } from './api/gemini';
+import { getRecommendations, checkAvailability, GeminiApiError, GeminiParseError, type AvailabilityStatus } from './api/gemini';
 import { fetchMoviePoster } from './api/tmdb';
 import type { MoodInputs, RecommendationResponse } from './types';
 import './App.css';
@@ -27,7 +27,7 @@ function AppInner() {
     setAppState('loading');
     setError('');
     try {
-      const data = await getRecommendations(mood);
+      const data = await getRecommendations(mood, locale);
       const posterPromises = data.recommendations.map(movie =>
         fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
       );
@@ -35,7 +35,13 @@ function AppInner() {
       setResults(data);
       setAppState('results');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      if (err instanceof GeminiParseError) {
+        setError(t.errors.parse);
+      } else if (err instanceof GeminiApiError) {
+        setError(t.errors.api);
+      } else {
+        setError(t.errors.generic);
+      }
       setAppState('error');
     }
   };
