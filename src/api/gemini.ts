@@ -60,16 +60,20 @@ export async function checkAvailability(): Promise<AvailabilityStatus> {
 }
 
 export class GeminiApiError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  readonly cause?: unknown;
+  constructor(message: string, cause?: unknown) {
     super(message);
     this.name = 'GeminiApiError';
+    this.cause = cause;
   }
 }
 
 export class GeminiParseError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  readonly cause?: unknown;
+  constructor(message: string, cause?: unknown) {
     super(message);
     this.name = 'GeminiParseError';
+    this.cause = cause;
   }
 }
 
