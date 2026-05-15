@@ -4,7 +4,7 @@ export interface T {
   langSwitch: string;
   subtitle: string;
   checking: string;
-  warnings: Record<'no-key' | 'invalid-key' | 'model-unavailable' | 'network-error', { title: string; detail: string }>;
+  warnings: Record<'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error', { title: string; detail: string }>;
   moodLabel: string;
   moodPlaceholder: string;
   slidersLabel: string;
@@ -55,6 +55,7 @@ export const translations: Record<Locale, T> = {
       'no-key':            { title: 'API key missing.',      detail: 'Add VITE_GEMINI_API_KEY to your .env file. Get a free key at aistudio.google.com.' },
       'invalid-key':       { title: 'API key invalid.',      detail: 'Your VITE_GEMINI_API_KEY was rejected. Double-check it in Google AI Studio.' },
       'model-unavailable': { title: 'Model unavailable.',    detail: 'gemini-2.5-flash is not accessible on this key. It may not be enabled for your account yet.' },
+      'quota-exceeded':     { title: 'Unavailable right now.', detail: 'The service is temporarily at capacity. Check back in a little while.' },
       'network-error':     { title: 'Cannot reach Gemini.', detail: 'Check your internet connection or try again in a moment.' },
     },
     moodLabel: 'How are you feeling?',
@@ -121,6 +122,7 @@ export const translations: Record<Locale, T> = {
       'no-key':            { title: 'Chave de API ausente.',               detail: 'Adicione VITE_GEMINI_API_KEY ao seu arquivo .env. Obtenha uma chave gratuita em aistudio.google.com.' },
       'invalid-key':       { title: 'Chave de API inválida.',              detail: 'Sua VITE_GEMINI_API_KEY foi rejeitada. Verifique no Google AI Studio.' },
       'model-unavailable': { title: 'Modelo indisponível.',                detail: 'gemini-2.5-flash não está acessível com esta chave. Pode não estar habilitado para sua conta ainda.' },
+      'quota-exceeded':     { title: 'Indisponível no momento.', detail: 'O serviço está temporariamente sobrecarregado. Volte daqui a pouco.' },
       'network-error':     { title: 'Não foi possível acessar o Gemini.', detail: 'Verifique sua conexão com a internet ou tente novamente em instantes.' },
     },
     moodLabel: 'Como você está se sentindo?',

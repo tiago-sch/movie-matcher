@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { SliderInput } from './SliderInput';
 import { useLocale } from '../i18n/context';
 import type { MoodInputs } from '../types';
+
+const RECAPTCHA_SITE_KEY = '6LeLPuwsAAAAAFqYhEGyNEcto1jZewgRkJiWK_nU';
 
 const WATCHING_CONTEXT_KEYS = ['alone', 'date night', 'with friends', 'background watch'] as const;
 const MENTAL_STATE_KEYS = ['tired', 'curious', 'overstimulated', 'emotional'] as const;
@@ -22,6 +25,8 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
   const [sliders, setSliders] = useState({ energy: 5, tone: 5, pace: 5 });
   const [watchingContext, setWatchingContext] = useState<ContextKey[]>([]);
   const [mentalState, setMentalState] = useState<StateKey | ''>('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const toggleContext = (ctx: ContextKey) => {
     setWatchingContext(prev => prev.includes(ctx) ? prev.filter(c => c !== ctx) : [...prev, ctx]);
@@ -29,10 +34,14 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!captchaToken) return;
     onSubmit({ text, sliders, watchingContext: [...watchingContext], mentalState });
+    recaptchaRef.current?.reset();
+    setCaptchaToken(null);
   };
 
-  const canSubmit = !disabled && (text.trim().length > 0 || watchingContext.length > 0 || mentalState !== '');
+  const hasInput = text.trim().length > 0 || watchingContext.length > 0 || mentalState !== '';
+  const canSubmit = !disabled && hasInput && !!captchaToken;
 
   return (
     <motion.form
@@ -122,6 +131,19 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
           })}
         </div>
       </div>
+
+      {/* CAPTCHA */}
+      {hasInput && !disabled && (
+        <div className="flex justify-center">
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={RECAPTCHA_SITE_KEY}
+            theme="dark"
+            onChange={setCaptchaToken}
+            onExpired={() => setCaptchaToken(null)}
+          />
+        </div>
+      )}
 
       {/* Submit */}
       <motion.button

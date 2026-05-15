@@ -40,23 +40,41 @@ Rules:
 - Recommend real, existing films only
 - Prioritize less obvious choices — avoid defaulting to the most popular titles`;
 
-export type AvailabilityStatus = 'ok' | 'no-key' | 'invalid-key' | 'model-unavailable' | 'network-error';
+export type AvailabilityStatus = 'ok' | 'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error';
 
 export async function checkAvailability(): Promise<AvailabilityStatus> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return 'no-key';
 
+  const base = 'https://generativelanguage.googleapis.com/v1beta';
+
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash?key=${apiKey}`
-    );
-    if (res.ok) return 'ok';
-    if (res.status === 400 || res.status === 401 || res.status === 403) return 'invalid-key';
-    if (res.status === 404) return 'model-unavailable';
-    return 'network-error';
+    const modelRes = await fetch(`${base}/models/gemini-2.5-flash?key=${apiKey}`);
+    if (modelRes.status === 400 || modelRes.status === 401 || modelRes.status === 403) return 'invalid-key';
+    if (modelRes.status === 404) return 'model-unavailable';
+    if (!modelRes.ok) return 'network-error';
   } catch {
     return 'network-error';
   }
+
+  try {
+    const quotaRes = await fetch(
+      `${base}/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'hi' }] }],
+          generationConfig: { maxOutputTokens: 1 },
+        }),
+      }
+    );
+    if (quotaRes.status === 429) return 'quota-exceeded';
+  } catch {
+    return 'network-error';
+  }
+
+  return 'ok';
 }
 
 export class GeminiApiError extends Error {

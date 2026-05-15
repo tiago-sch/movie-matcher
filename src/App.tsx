@@ -12,6 +12,8 @@ import './App.css';
 
 type AppState = 'form' | 'loading' | 'results' | 'error';
 
+declare function gtag(command: string, action: string, params?: Record<string, unknown>): void;
+
 function AppInner() {
   const { t, locale, setLocale } = useLocale();
   const [appState, setAppState] = useState<AppState>('form');
@@ -26,6 +28,15 @@ function AppInner() {
   const handleSubmit = async (mood: MoodInputs) => {
     setAppState('loading');
     setError('');
+    gtag('event', 'search', {
+      mood_text: mood.text,
+      energy: mood.sliders.energy,
+      tone: mood.sliders.tone,
+      pace: mood.sliders.pace,
+      watching_context: mood.watchingContext.join(', ') || 'none',
+      mental_state: mood.mentalState || 'none',
+      locale,
+    });
     try {
       const data = await getRecommendations(mood, locale);
       const posterPromises = data.recommendations.map(movie =>
@@ -50,7 +61,7 @@ function AppInner() {
 
   const apiReady = apiStatus === 'ok';
   const warning = apiStatus !== 'ok' && apiStatus !== 'checking'
-    ? t.warnings[apiStatus as Exclude<AvailabilityStatus, 'ok'>]
+    ? t.warnings[apiStatus as Exclude<AvailabilityStatus, 'ok' | 'checking'>]
     : null;
 
   const otherLocale: Locale = locale === 'en' ? 'pt-BR' : 'en';
