@@ -99,7 +99,7 @@ export class OpenAiParseError extends Error {
   }
 }
 
-export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'): Promise<RecommendationResponse> {
+export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en', exclude: string[] = []): Promise<RecommendationResponse> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
 
@@ -117,6 +117,9 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
     `- Pace: ${mood.sliders.pace}/10 (${sliderDescriptions.pace})`,
     mood.watchingContext.length ? `Watching context: ${mood.watchingContext.join(', ')}` : '',
     mood.mentalState ? `Mental state: ${mood.mentalState}` : '',
+    exclude.length
+      ? `Already shown — do NOT recommend any of these again (anywhere in the response): ${exclude.slice(0, 60).join('; ')}`
+      : '',
   ].filter(Boolean).join('\n');
 
   let text: string;

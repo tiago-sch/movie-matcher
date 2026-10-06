@@ -7,6 +7,7 @@ interface RecommendBody {
   mood?: MoodInputs;
   locale?: Locale;
   token?: string;
+  exclude?: string[];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (captcha === 'network-error') return res.status(502).json({ error: 'captcha-unavailable' });
 
   try {
-    const data = await getRecommendations(body.mood, locale);
+    const exclude = Array.isArray(body.exclude) ? body.exclude.filter((x): x is string => typeof x === 'string').slice(0, 60) : [];
+    const data = await getRecommendations(body.mood, locale, exclude);
     return res.status(200).json(data);
   } catch (err) {
     if (err instanceof OpenAiParseError) return res.status(502).json({ error: 'parse' });

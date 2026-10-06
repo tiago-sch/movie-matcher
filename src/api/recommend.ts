@@ -31,13 +31,14 @@ export async function getRecommendations(
   mood: MoodInputs,
   locale: Locale,
   token: string,
+  exclude: string[] = [],
 ): Promise<RecommendationResponse> {
   let res: Response;
   try {
     res = await fetch('/api/recommend', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mood, locale, token }),
+      body: JSON.stringify({ mood, locale, token, exclude }),
     });
   } catch {
     throw new RecommendError('api', 'Network error');

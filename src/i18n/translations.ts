@@ -35,6 +35,15 @@ export interface T {
   weirderDesc: string;
   startOver: string;
   tryAgain: string;
+  loadMore: string;
+  loadingMore: string;
+  viewDetails: string;
+  whyThisFits: string;
+  overview: string;
+  cast: string;
+  noDetails: string;
+  viewOnTmdb: string;
+  close: string;
   errors: {
     parse: string;
     api: string;
@@ -105,6 +114,15 @@ export const translations: Record<Locale, T> = {
     weirderDesc: 'Fully commit to the vibe',
     startOver:   'Start over',
     tryAgain:    'Try again',
+    loadMore:    'Show 3 more',
+    loadingMore: 'Finding more…',
+    viewDetails: 'View details',
+    whyThisFits: 'Why this fits',
+    overview:    'Overview',
+    cast:        'Cast',
+    noDetails:   'No synopsis available for this title.',
+    viewOnTmdb:  'View on TMDB',
+    close:       'Close',
     errors: {
       parse:   'The AI returned an unexpected response. Please try again.',
       api:     'The OpenAI API returned an error. Please try again later.',
@@ -174,6 +192,15 @@ export const translations: Record<Locale, T> = {
     weirderDesc: 'Mergulhe de cabeça no clima',
     startOver:   'Começar de novo',
     tryAgain:    'Tentar novamente',
+    loadMore:    'Mostrar mais 3',
+    loadingMore: 'Buscando mais…',
+    viewDetails: 'Ver detalhes',
+    whyThisFits: 'Por que combina',
+    overview:    'Sinopse',
+    cast:        'Elenco',
+    noDetails:   'Sem sinopse disponível para este título.',
+    viewOnTmdb:  'Ver no TMDB',
+    close:       'Fechar',
     errors: {
       parse:   'A IA retornou uma resposta inesperada. Tente novamente.',
       api:     'A API da OpenAI retornou um erro. Tente novamente mais tarde.',

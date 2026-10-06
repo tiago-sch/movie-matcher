@@ -7,6 +7,7 @@ import { LoadingState } from './components/LoadingState';
 import { Results } from './components/Results';
 import { getRecommendations, checkAvailability, RecommendError, type AvailabilityStatus } from './api/recommend';
 import { fetchMoviePoster } from './api/tmdb';
+import { useTurnstile } from './hooks/useTurnstile';
 import type { MoodInputs, RecommendationResponse } from './types';
 import './App.css';
 
@@ -20,14 +21,29 @@ function AppInner() {
   const [results, setResults] = useState<RecommendationResponse | null>(null);
   const [error, setError] = useState('');
   const [apiStatus, setApiStatus] = useState<AvailabilityStatus | 'checking'>('checking');
+  const [lastMood, setLastMood] = useState<MoodInputs | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const { containerRef: captchaRef, getToken: getCaptchaToken } = useTurnstile();
 
   useEffect(() => {
     checkAvailability().then(setApiStatus);
   }, []);
 
-  const handleSubmit = async (mood: MoodInputs, captchaToken: string | null) => {
+  const errorMessage = (err: unknown) =>
+    err instanceof RecommendError && err.kind !== 'generic' ? t.errors[err.kind] : t.errors.generic;
+
+  const attachPosters = async (data: RecommendationResponse) => {
+    await Promise.allSettled(data.recommendations.map(movie =>
+      fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
+    ));
+  };
+
+  const handleSubmit = async (mood: MoodInputs) => {
     setAppState('loading');
     setError('');
+    setLoadMoreError(null);
+    setLastMood(mood);
     gtag('event', 'search', {
       mood_text: mood.text,
       energy: mood.sliders.energy,
@@ -38,25 +54,45 @@ function AppInner() {
       locale,
     });
     try {
+      const captchaToken = await getCaptchaToken();
       if (!captchaToken) throw new RecommendError('captcha');
       const data = await getRecommendations(mood, locale, captchaToken);
-      const posterPromises = data.recommendations.map(movie =>
-        fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
-      );
-      await Promise.allSettled(posterPromises);
+      await attachPosters(data);
       setResults(data);
       setAppState('results');
     } catch (err) {
-      if (err instanceof RecommendError && err.kind !== 'generic') {
-        setError(t.errors[err.kind]);
-      } else {
-        setError(t.errors.generic);
-      }
+      setError(errorMessage(err));
       setAppState('error');
     }
   };
 
-  const handleReset = () => { setResults(null); setError(''); setAppState('form'); };
+  const handleLoadMore = async () => {
+    if (!lastMood || !results || loadingMore) return;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    gtag('event', 'load_more', { shown: results.recommendations.length, locale });
+    try {
+      const shown = [
+        ...results.recommendations,
+        ...results.alternatives.safer,
+        ...results.alternatives.bolder,
+        ...results.alternatives.weirder,
+      ].map(m => (m.year ? `${m.title} (${m.year})` : m.title));
+      const captchaToken = await getCaptchaToken();
+      if (!captchaToken) throw new RecommendError('captcha');
+      const more = await getRecommendations(lastMood, locale, captchaToken, shown);
+      const seen = new Set(results.recommendations.map(m => m.title.toLowerCase()));
+      const fresh = more.recommendations.filter(m => !seen.has(m.title.toLowerCase())).slice(0, 3);
+      await attachPosters({ ...more, recommendations: fresh });
+      setResults({ ...results, recommendations: [...results.recommendations, ...fresh] });
+    } catch (err) {
+      setLoadMoreError(errorMessage(err));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleReset = () => { setResults(null); setError(''); setLoadMoreError(null); setAppState('form'); };
 
   const apiReady = apiStatus === 'ok';
   const warning = apiStatus !== 'ok' && apiStatus !== 'checking'
@@ -156,7 +192,7 @@ function AppInner() {
           )}
           {appState === 'results' && results && (
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              <Results data={results} onReset={handleReset} />
+              <Results data={results} onReset={handleReset} onLoadMore={handleLoadMore} loadingMore={loadingMore} loadMoreError={loadMoreError} />
             </motion.div>
           )}
           {appState === 'error' && (
@@ -178,6 +214,9 @@ function AppInner() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Invisible Turnstile widget — mounted once for the whole app */}
+      <div ref={captchaRef} className="flex justify-center empty:hidden" />
 
       {/* Footer */}
       <footer

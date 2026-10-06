@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { SliderInput } from './SliderInput';
 import { useLocale } from '../i18n/context';
 import type { MoodInputs } from '../types';
-import { mountTurnstile } from '../api/turnstile';
 
 const WATCHING_CONTEXT_KEYS = ['alone', 'date night', 'with friends', 'background watch'] as const;
 const MENTAL_STATE_KEYS = ['tired', 'curious', 'overstimulated', 'emotional'] as const;
@@ -12,7 +11,7 @@ type ContextKey = typeof WATCHING_CONTEXT_KEYS[number];
 type StateKey = typeof MENTAL_STATE_KEYS[number];
 
 interface MoodFormProps {
-  onSubmit: (mood: MoodInputs, captchaToken: string | null) => void;
+  onSubmit: (mood: MoodInputs) => void;
   isLoading: boolean;
   disabled?: boolean;
 }
@@ -23,45 +22,18 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
   const [sliders, setSliders] = useState({ energy: 5, tone: 5, pace: 5 });
   const [watchingContext, setWatchingContext] = useState<ContextKey[]>([]);
   const [mentalState, setMentalState] = useState<StateKey | ''>('');
-  const captchaRef = useRef<HTMLDivElement>(null);
-  const captchaApi = useRef<Awaited<ReturnType<typeof mountTurnstile>> | null>(null);
-
-  useEffect(() => {
-    if (!captchaRef.current) return;
-    let cancelled = false;
-    let destroy: (() => void) | undefined;
-    mountTurnstile(captchaRef.current)
-      .then(api => { if (cancelled) api.destroy(); else { captchaApi.current = api; destroy = api.destroy; } })
-      .catch(() => { /* surfaced on submit */ });
-    return () => { cancelled = true; destroy?.(); captchaApi.current = null; };
-  }, []);
 
   const toggleContext = (ctx: ContextKey) => {
     setWatchingContext(prev => prev.includes(ctx) ? prev.filter(c => c !== ctx) : [...prev, ctx]);
   };
 
-  const [verifying, setVerifying] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (verifying) return;
-    const mood: MoodInputs = { text, sliders, watchingContext: [...watchingContext], mentalState };
-    // Resolve the Turnstile token while the form (and the widget) is still mounted.
-    // A null token lets the server reject the request with a proper captcha error.
-    setVerifying(true);
-    let token: string | null = null;
-    try {
-      token = captchaApi.current ? await captchaApi.current.getToken() : null;
-    } catch {
-      token = null;
-    } finally {
-      setVerifying(false);
-    }
-    onSubmit(mood, token);
+    onSubmit({ text, sliders, watchingContext: [...watchingContext], mentalState });
   };
 
   const hasInput = text.trim().length > 0 || watchingContext.length > 0 || mentalState !== '';
-  const canSubmit = !disabled && hasInput && !verifying;
+  const canSubmit = !disabled && hasInput;
 
   return (
     <motion.form
@@ -151,9 +123,6 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
           })}
         </div>
       </div>
-
-      {/* Turnstile (invisible unless a challenge is needed) */}
-      <div ref={captchaRef} className="flex justify-center empty:hidden" />
 
       {/* Submit */}
       <motion.button

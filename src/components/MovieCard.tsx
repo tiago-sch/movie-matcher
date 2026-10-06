@@ -31,22 +31,28 @@ function ScoreBar({ label, value, color }: ScoreBarProps) {
 interface MovieCardProps {
   movie: MovieRecommendation;
   index: number;
+  onSelect: (movie: MovieRecommendation) => void;
 }
 
-export function MovieCard({ movie, index }: MovieCardProps) {
+export function MovieCard({ movie, index, onSelect }: MovieCardProps) {
   const { t } = useLocale();
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={() => onSelect(movie)}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.12, duration: 0.4, ease: 'easeOut' }}
-      className="rounded-2xl overflow-hidden flex flex-col"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      className="rounded-2xl overflow-hidden flex flex-col text-left cursor-pointer group"
       style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      aria-label={`${movie.title}${movie.year ? ` (${movie.year})` : ''} — ${t.viewDetails}`}
     >
       <div className="relative aspect-[2/3] overflow-hidden bg-[#0a0a1a]">
         {movie.posterUrl ? (
-          <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+          <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
         ) : (
           <div className="w-full h-full flex items-center justify-center p-6 text-center">
             <span className="text-2xl font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.15)' }}>
@@ -66,7 +72,7 @@ export function MovieCard({ movie, index }: MovieCardProps) {
             <h3 className="font-semibold text-white text-base leading-tight">{movie.title}</h3>
             {movie.year && <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>{movie.year}</span>}
           </div>
-          <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text)' }}>{movie.why}</p>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--accent)' }}>{t.viewDetails} →</p>
         </div>
 
         <div className="flex flex-col gap-1.5 pt-1">
@@ -88,29 +94,36 @@ export function MovieCard({ movie, index }: MovieCardProps) {
           </div>
         )}
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
 interface AlternativeCardProps {
   movie: AlternativeMovie;
   index: number;
+  onSelect: (movie: AlternativeMovie) => void;
 }
 
-export function AlternativeCard({ movie, index }: AlternativeCardProps) {
+export function AlternativeCard({ movie, index, onSelect }: AlternativeCardProps) {
+  const { t } = useLocale();
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={() => onSelect(movie)}
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.08, duration: 0.3 }}
-      className="rounded-xl p-4 flex flex-col gap-1"
+      whileHover={{ x: 2 }}
+      whileTap={{ scale: 0.98 }}
+      className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-left cursor-pointer w-full"
       style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+      aria-label={`${movie.title}${movie.year ? ` (${movie.year})` : ''} — ${t.viewDetails}`}
     >
-      <div className="flex items-baseline gap-2">
-        <span className="font-medium text-white text-sm">{movie.title}</span>
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span className="font-medium text-white text-sm truncate">{movie.title}</span>
         {movie.year && <span className="text-[11px] shrink-0" style={{ color: 'var(--text-muted)' }}>{movie.year}</span>}
       </div>
-      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{movie.why}</p>
-    </motion.div>
+      <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>→</span>
+    </motion.button>
   );
 }
