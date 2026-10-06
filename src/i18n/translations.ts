@@ -4,7 +4,7 @@ export interface T {
   langSwitch: string;
   subtitle: string;
   checking: string;
-  warnings: Record<'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error', { title: string; detail: string }>;
+  warnings: Record<'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error' | 'captcha-misconfigured', { title: string; detail: string }>;
   moodLabel: string;
   moodPlaceholder: string;
   slidersLabel: string;
@@ -38,6 +38,7 @@ export interface T {
   errors: {
     parse: string;
     api: string;
+    captcha: string;
     generic: string;
   };
   energyLabel: string;
@@ -52,11 +53,12 @@ export const translations: Record<Locale, T> = {
     subtitle: "Tell me how you feel. I'll find your film.",
     checking: 'Checking API availability…',
     warnings: {
-      'no-key':            { title: 'API key missing.',      detail: 'Add VITE_OPENAI_API_KEY to your .env file. Get a key at platform.openai.com/api-keys.' },
-      'invalid-key':       { title: 'API key invalid.',      detail: 'Your VITE_OPENAI_API_KEY was rejected. Double-check it in the OpenAI dashboard.' },
-      'model-unavailable': { title: 'Model unavailable.',    detail: 'The configured OpenAI model is not accessible on this key. Check VITE_OPENAI_MODEL.' },
+      'no-key':            { title: 'API key missing.',      detail: 'Set OPENAI_API_KEY in the server environment. Get a key at platform.openai.com/api-keys.' },
+      'invalid-key':       { title: 'API key invalid.',      detail: 'OPENAI_API_KEY was rejected. Double-check it in the OpenAI dashboard.' },
+      'model-unavailable': { title: 'Model unavailable.',    detail: 'The configured OpenAI model is not accessible on this key. Check OPENAI_MODEL.' },
       'quota-exceeded':     { title: 'Unavailable right now.', detail: 'The service is temporarily at capacity. Check back in a little while.' },
-      'network-error':     { title: 'Cannot reach OpenAI.', detail: 'Check your internet connection or try again in a moment.' },
+      'network-error':     { title: 'Cannot reach the server.', detail: 'Check your internet connection or try again in a moment.' },
+      'captcha-misconfigured': { title: 'reCAPTCHA not configured.', detail: 'Set VITE_RECAPTCHA_SITE_KEY, RECAPTCHA_SITE_KEY, RECAPTCHA_API_KEY and GCP_PROJECT_ID.' },
     },
     moodLabel: 'How are you feeling?',
     moodPlaceholder: '"I want something comforting but not childish"\n"Mentally tired, need smart but not heavy"\n"Chaotic and stylish — it\'s Friday night"',
@@ -105,7 +107,8 @@ export const translations: Record<Locale, T> = {
     tryAgain:    'Try again',
     errors: {
       parse:   'The AI returned an unexpected response. Please try again.',
-      api:     'The OpenAI API returned an error. Check your API key or try again later.',
+      api:     'The OpenAI API returned an error. Please try again later.',
+      captcha: 'We could not verify that you are human. Please reload the page and try again.',
       generic: 'Something went wrong. Please try again.',
     },
     energyLabel: 'Energy',
@@ -119,11 +122,12 @@ export const translations: Record<Locale, T> = {
     subtitle: 'Me diga como você está. Eu encontro seu filme.',
     checking: 'Verificando disponibilidade da API…',
     warnings: {
-      'no-key':            { title: 'Chave de API ausente.',               detail: 'Adicione VITE_OPENAI_API_KEY ao seu arquivo .env. Obtenha uma chave em platform.openai.com/api-keys.' },
-      'invalid-key':       { title: 'Chave de API inválida.',              detail: 'Sua VITE_OPENAI_API_KEY foi rejeitada. Verifique no painel da OpenAI.' },
-      'model-unavailable': { title: 'Modelo indisponível.',                detail: 'O modelo OpenAI configurado não está acessível com esta chave. Verifique VITE_OPENAI_MODEL.' },
+      'no-key':            { title: 'Chave de API ausente.',               detail: 'Defina OPENAI_API_KEY no ambiente do servidor. Obtenha uma chave em platform.openai.com/api-keys.' },
+      'invalid-key':       { title: 'Chave de API inválida.',              detail: 'OPENAI_API_KEY foi rejeitada. Verifique no painel da OpenAI.' },
+      'model-unavailable': { title: 'Modelo indisponível.',                detail: 'O modelo OpenAI configurado não está acessível com esta chave. Verifique OPENAI_MODEL.' },
       'quota-exceeded':     { title: 'Indisponível no momento.', detail: 'O serviço está temporariamente sobrecarregado. Volte daqui a pouco.' },
-      'network-error':     { title: 'Não foi possível acessar a OpenAI.', detail: 'Verifique sua conexão com a internet ou tente novamente em instantes.' },
+      'network-error':     { title: 'Não foi possível acessar o servidor.', detail: 'Verifique sua conexão com a internet ou tente novamente em instantes.' },
+      'captcha-misconfigured': { title: 'reCAPTCHA não configurado.', detail: 'Defina VITE_RECAPTCHA_SITE_KEY, RECAPTCHA_SITE_KEY, RECAPTCHA_API_KEY e GCP_PROJECT_ID.' },
     },
     moodLabel: 'Como você está se sentindo?',
     moodPlaceholder: '"Quero algo reconfortante mas não infantil"\n"Cansado mentalmente, preciso de algo inteligente mas não pesado"\n"Caótico e estiloso — é sexta-feira à noite"',
@@ -172,7 +176,8 @@ export const translations: Record<Locale, T> = {
     tryAgain:    'Tentar novamente',
     errors: {
       parse:   'A IA retornou uma resposta inesperada. Tente novamente.',
-      api:     'A API da OpenAI retornou um erro. Verifique sua chave de API ou tente mais tarde.',
+      api:     'A API da OpenAI retornou um erro. Tente novamente mais tarde.',
+      captcha: 'Não conseguimos verificar que você é humano. Recarregue a página e tente de novo.',
       generic: 'Algo deu errado. Tente novamente.',
     },
     energyLabel: 'Energia',

@@ -5,7 +5,8 @@ import type { Locale } from './i18n/translations';
 import { MoodForm } from './components/MoodForm';
 import { LoadingState } from './components/LoadingState';
 import { Results } from './components/Results';
-import { getRecommendations, checkAvailability, OpenAiApiError, OpenAiParseError, type AvailabilityStatus } from './api/openai';
+import { getRecommendations, checkAvailability, RecommendError, type AvailabilityStatus } from './api/recommend';
+import { getCaptchaToken } from './api/recaptcha';
 import { fetchMoviePoster } from './api/tmdb';
 import type { MoodInputs, RecommendationResponse } from './types';
 import './App.css';
@@ -38,7 +39,13 @@ function AppInner() {
       locale,
     });
     try {
-      const data = await getRecommendations(mood, locale);
+      let token: string;
+      try {
+        token = await getCaptchaToken();
+      } catch {
+        throw new RecommendError('captcha');
+      }
+      const data = await getRecommendations(mood, locale, token);
       const posterPromises = data.recommendations.map(movie =>
         fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
       );
@@ -46,10 +53,8 @@ function AppInner() {
       setResults(data);
       setAppState('results');
     } catch (err) {
-      if (err instanceof OpenAiParseError) {
-        setError(t.errors.parse);
-      } else if (err instanceof OpenAiApiError) {
-        setError(t.errors.api);
+      if (err instanceof RecommendError && err.kind !== 'generic') {
+        setError(t.errors[err.kind]);
       } else {
         setError(t.errors.generic);
       }

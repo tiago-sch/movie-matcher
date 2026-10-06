@@ -1,5 +1,6 @@
-import type { MoodInputs, RecommendationResponse } from '../types';
-import type { Locale } from '../i18n/translations';
+import type { MoodInputs, RecommendationResponse } from '../../src/types.js';
+
+export type Locale = 'en' | 'pt-BR';
 
 const LANGUAGE_INSTRUCTIONS: Record<Locale, string> = {
   'en': 'Respond in English.',
@@ -42,14 +43,14 @@ Rules:
 export type AvailabilityStatus = 'ok' | 'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error';
 
 const OPENAI_BASE = 'https://api.openai.com/v1';
-const MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini';
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 function authHeaders(apiKey: string) {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` };
 }
 
 export async function checkAvailability(): Promise<AvailabilityStatus> {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return 'no-key';
 
   try {
@@ -99,8 +100,8 @@ export class OpenAiParseError extends Error {
 }
 
 export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'): Promise<RecommendationResponse> {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!apiKey) throw new Error('VITE_OPENAI_API_KEY is not set');
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
 
   const sliderDescriptions = {
     energy: mood.sliders.energy <= 3 ? 'calm' : mood.sliders.energy >= 7 ? 'intense' : 'moderate energy',
@@ -133,7 +134,7 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
       }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-    const data = await res.json();
+    const data = await res.json() as { choices?: { message?: { content?: string } }[] };
     text = (data.choices?.[0]?.message?.content ?? '').trim();
   } catch (err) {
     throw new OpenAiApiError('OpenAI API call failed', err);

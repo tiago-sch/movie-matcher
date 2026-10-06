@@ -32,7 +32,8 @@ Movie posters are fetched from TMDB (optional).
 - **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS v4**
 - **Framer Motion** — card entrance animations, loading state
-- **OpenAI** (`gpt-4o-mini` by default, override with `VITE_OPENAI_MODEL`) — mood interpretation and recommendations
+- **OpenAI** (`gpt-4o-mini` by default, override with `OPENAI_MODEL`) — mood interpretation and recommendations, called from a Vercel serverless function so the key never reaches the browser
+- **reCAPTCHA Enterprise** (score-based, invisible) — bot protection, verified server-side
 - **TMDB API** — movie posters (optional)
 - Custom i18n — English and Brazilian Portuguese, no external library
 
@@ -52,37 +53,48 @@ npm install
 cp .env.example .env
 ```
 
-Open `.env` and fill in your keys:
+Open `.env` and fill in your keys. Variables without the `VITE_` prefix are server-only and are read by the function in `api/recommend.ts`; on Vercel, set them in the project's Environment Variables.
 
 ```env
-# Required — https://platform.openai.com/api-keys
-VITE_OPENAI_API_KEY=
+# --- Server-side ---
+OPENAI_API_KEY=        # Required — https://platform.openai.com/api-keys
+OPENAI_MODEL=          # Optional — defaults to gpt-4o-mini
+GCP_PROJECT_ID=        # Required — Google Cloud project that owns the reCAPTCHA key
+RECAPTCHA_API_KEY=     # Required — Google Cloud API key with reCAPTCHA Enterprise API access
+RECAPTCHA_SITE_KEY=    # Required — same site key as below
+RECAPTCHA_MIN_SCORE=   # Optional — 0.0–1.0, defaults to 0.5
 
-# Optional — defaults to gpt-4o-mini
-VITE_OPENAI_MODEL=
-
-# Optional — reCAPTCHA v2 checkbox site key (falls back to the built-in dev key)
-VITE_RECAPTCHA_SITE_KEY=
-
-# Optional — https://www.themoviedb.org/settings/api
-# Without this, cards render without poster images
-VITE_TMDB_API_KEY=
+# --- Client-side ---
+VITE_RECAPTCHA_SITE_KEY=   # Required — reCAPTCHA Enterprise score-based site key
+VITE_TMDB_API_KEY=         # Optional — https://www.themoviedb.org/settings/api
 ```
+
+To create the reCAPTCHA key: Google Cloud Console → Security → reCAPTCHA → Create key, type **Score-based**, add your production domain and `localhost`. Then create an API key under APIs & Services → Credentials, restricted to the reCAPTCHA Enterprise API.
 
 ### 3. Run
 
+The `/api/recommend` function only exists under the Vercel runtime, so local development uses the Vercel CLI instead of plain `vite`:
+
 ```bash
-npm run dev
+npx vercel dev
 ```
+
+`npm run dev` still works for UI-only work, but requests to `/api/recommend` will 404.
 
 ---
 
 ## Project structure
 
 ```
+api/
+  recommend.ts      # Vercel function: verifies reCAPTCHA, calls OpenAI
+  _lib/
+    openai.ts       # OpenAI prompt + API call + availability check (server-only)
+    recaptcha.ts    # reCAPTCHA Enterprise assessment (server-only)
 src/
   api/
-    openai.ts       # OpenAI API call + availability check
+    recommend.ts    # Client for /api/recommend
+    recaptcha.ts    # Loads enterprise.js and fetches tokens
     tmdb.ts         # TMDB poster fetching
   components/
     MoodForm.tsx    # Mood input form (text, sliders, chips)
