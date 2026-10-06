@@ -67,7 +67,12 @@ export async function mountTurnstile(container: HTMLElement): Promise<{
 
   return {
     getToken: () => new Promise<string>((resolve, reject) => {
-      pending = { resolve, reject };
+      const timer = window.setTimeout(() => {
+        if (pending?.resolve === wrappedResolve) { pending = null; reject(new Error('Turnstile timed out')); }
+      }, 30_000);
+      const wrappedResolve = (t: string) => { window.clearTimeout(timer); resolve(t); };
+      const wrappedReject = (e: Error) => { window.clearTimeout(timer); reject(e); };
+      pending = { resolve: wrappedResolve, reject: wrappedReject };
       ts.reset(id);
       ts.execute(id);
     }),

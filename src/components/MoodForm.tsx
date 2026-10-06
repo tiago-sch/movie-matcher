@@ -12,7 +12,7 @@ type ContextKey = typeof WATCHING_CONTEXT_KEYS[number];
 type StateKey = typeof MENTAL_STATE_KEYS[number];
 
 interface MoodFormProps {
-  onSubmit: (mood: MoodInputs, getCaptchaToken: () => Promise<string>) => void;
+  onSubmit: (mood: MoodInputs, captchaToken: string | null) => void;
   isLoading: boolean;
   disabled?: boolean;
 }
@@ -40,14 +40,28 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
     setWatchingContext(prev => prev.includes(ctx) ? prev.filter(c => c !== ctx) : [...prev, ctx]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [verifying, setVerifying] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const getToken = () => captchaApi.current?.getToken() ?? Promise.reject(new Error('Captcha not ready'));
-    onSubmit({ text, sliders, watchingContext: [...watchingContext], mentalState }, getToken);
+    if (verifying) return;
+    const mood: MoodInputs = { text, sliders, watchingContext: [...watchingContext], mentalState };
+    // Resolve the Turnstile token while the form (and the widget) is still mounted.
+    // A null token lets the server reject the request with a proper captcha error.
+    setVerifying(true);
+    let token: string | null = null;
+    try {
+      token = captchaApi.current ? await captchaApi.current.getToken() : null;
+    } catch {
+      token = null;
+    } finally {
+      setVerifying(false);
+    }
+    onSubmit(mood, token);
   };
 
   const hasInput = text.trim().length > 0 || watchingContext.length > 0 || mentalState !== '';
-  const canSubmit = !disabled && hasInput;
+  const canSubmit = !disabled && hasInput && !verifying;
 
   return (
     <motion.form

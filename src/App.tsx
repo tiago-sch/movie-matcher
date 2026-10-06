@@ -25,7 +25,7 @@ function AppInner() {
     checkAvailability().then(setApiStatus);
   }, []);
 
-  const handleSubmit = async (mood: MoodInputs, getCaptchaToken: () => Promise<string>) => {
+  const handleSubmit = async (mood: MoodInputs, captchaToken: string | null) => {
     setAppState('loading');
     setError('');
     gtag('event', 'search', {
@@ -38,13 +38,8 @@ function AppInner() {
       locale,
     });
     try {
-      let token: string;
-      try {
-        token = await getCaptchaToken();
-      } catch {
-        throw new RecommendError('captcha');
-      }
-      const data = await getRecommendations(mood, locale, token);
+      if (!captchaToken) throw new RecommendError('captcha');
+      const data = await getRecommendations(mood, locale, captchaToken);
       const posterPromises = data.recommendations.map(movie =>
         fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
       );
