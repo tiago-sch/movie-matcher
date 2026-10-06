@@ -61,6 +61,9 @@ VITE_OPENAI_API_KEY=
 # Optional — defaults to gpt-4o-mini
 VITE_OPENAI_MODEL=
 
+# Optional — reCAPTCHA v2 checkbox site key (falls back to the built-in dev key)
+VITE_RECAPTCHA_SITE_KEY=
+
 # Optional — https://www.themoviedb.org/settings/api
 # Without this, cards render without poster images
 VITE_TMDB_API_KEY=

@@ -5,7 +5,7 @@ import { SliderInput } from './SliderInput';
 import { useLocale } from '../i18n/context';
 import type { MoodInputs } from '../types';
 
-const RECAPTCHA_SITE_KEY = '6LeLPuwsAAAAAFqYhEGyNEcto1jZewgRkJiWK_nU';
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeLPuwsAAAAAFqYhEGyNEcto1jZewgRkJiWK_nU';
 
 const WATCHING_CONTEXT_KEYS = ['alone', 'date night', 'with friends', 'background watch'] as const;
 const MENTAL_STATE_KEYS = ['tired', 'curious', 'overstimulated', 'emotional'] as const;
