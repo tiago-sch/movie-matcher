@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { MoodInputs, RecommendationResponse } from '../types';
 import type { Locale } from '../i18n/translations';
 
@@ -42,33 +41,37 @@ Rules:
 
 export type AvailabilityStatus = 'ok' | 'no-key' | 'invalid-key' | 'model-unavailable' | 'quota-exceeded' | 'network-error';
 
+const OPENAI_BASE = 'https://api.openai.com/v1';
+const MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini';
+
+function authHeaders(apiKey: string) {
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` };
+}
+
 export async function checkAvailability(): Promise<AvailabilityStatus> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
   if (!apiKey) return 'no-key';
 
-  const base = 'https://generativelanguage.googleapis.com/v1beta';
-
   try {
-    const modelRes = await fetch(`${base}/models/gemini-2.5-flash?key=${apiKey}`);
-    if (modelRes.status === 400 || modelRes.status === 401 || modelRes.status === 403) return 'invalid-key';
+    const modelRes = await fetch(`${OPENAI_BASE}/models/${MODEL}`, { headers: authHeaders(apiKey) });
+    if (modelRes.status === 401 || modelRes.status === 403) return 'invalid-key';
     if (modelRes.status === 404) return 'model-unavailable';
+    if (modelRes.status === 429) return 'quota-exceeded';
     if (!modelRes.ok) return 'network-error';
   } catch {
     return 'network-error';
   }
 
   try {
-    const quotaRes = await fetch(
-      `${base}/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'hi' }] }],
-          generationConfig: { maxOutputTokens: 1 },
-        }),
-      }
-    );
+    const quotaRes = await fetch(`${OPENAI_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: authHeaders(apiKey),
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 1,
+      }),
+    });
     if (quotaRes.status === 429) return 'quota-exceeded';
   } catch {
     return 'network-error';
@@ -77,33 +80,27 @@ export async function checkAvailability(): Promise<AvailabilityStatus> {
   return 'ok';
 }
 
-export class GeminiApiError extends Error {
+export class OpenAiApiError extends Error {
   readonly cause?: unknown;
   constructor(message: string, cause?: unknown) {
     super(message);
-    this.name = 'GeminiApiError';
+    this.name = 'OpenAiApiError';
     this.cause = cause;
   }
 }
 
-export class GeminiParseError extends Error {
+export class OpenAiParseError extends Error {
   readonly cause?: unknown;
   constructor(message: string, cause?: unknown) {
     super(message);
-    this.name = 'GeminiParseError';
+    this.name = 'OpenAiParseError';
     this.cause = cause;
   }
 }
 
 export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'): Promise<RecommendationResponse> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('VITE_GEMINI_API_KEY is not set');
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: `${SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTIONS[locale]}`,
-  });
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (!apiKey) throw new Error('VITE_OPENAI_API_KEY is not set');
 
   const sliderDescriptions = {
     energy: mood.sliders.energy <= 3 ? 'calm' : mood.sliders.energy >= 7 ? 'intense' : 'moderate energy',
@@ -123,10 +120,23 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
 
   let text: string;
   try {
-    const result = await model.generateContent(userMessage);
-    text = result.response.text().trim();
+    const res = await fetch(`${OPENAI_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: authHeaders(apiKey),
+      body: JSON.stringify({
+        model: MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: `${SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTIONS[locale]}` },
+          { role: 'user', content: userMessage },
+        ],
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    text = (data.choices?.[0]?.message?.content ?? '').trim();
   } catch (err) {
-    throw new GeminiApiError('Gemini API call failed', err);
+    throw new OpenAiApiError('OpenAI API call failed', err);
   }
 
   // Strip markdown code fences if the model wraps the JSON anyway
@@ -135,6 +145,6 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
   try {
     return JSON.parse(json) as RecommendationResponse;
   } catch (err) {
-    throw new GeminiParseError('Failed to parse Gemini response', err);
+    throw new OpenAiParseError('Failed to parse OpenAI response', err);
   }
 }

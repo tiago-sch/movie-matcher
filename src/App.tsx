@@ -5,7 +5,7 @@ import type { Locale } from './i18n/translations';
 import { MoodForm } from './components/MoodForm';
 import { LoadingState } from './components/LoadingState';
 import { Results } from './components/Results';
-import { getRecommendations, checkAvailability, GeminiApiError, GeminiParseError, type AvailabilityStatus } from './api/gemini';
+import { getRecommendations, checkAvailability, OpenAiApiError, OpenAiParseError, type AvailabilityStatus } from './api/openai';
 import { fetchMoviePoster } from './api/tmdb';
 import type { MoodInputs, RecommendationResponse } from './types';
 import './App.css';
@@ -46,9 +46,9 @@ function AppInner() {
       setResults(data);
       setAppState('results');
     } catch (err) {
-      if (err instanceof GeminiParseError) {
+      if (err instanceof OpenAiParseError) {
         setError(t.errors.parse);
-      } else if (err instanceof GeminiApiError) {
+      } else if (err instanceof OpenAiApiError) {
         setError(t.errors.api);
       } else {
         setError(t.errors.generic);

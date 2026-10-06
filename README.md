@@ -2,7 +2,7 @@
 
 Tell it how you feel. It finds your film.
 
-MovieMatcher interprets your emotional state — not just genre preferences — and recommends movies that match your mood, energy, and watching context using Google Gemini AI.
+MovieMatcher interprets your emotional state — not just genre preferences — and recommends movies that match your mood, energy, and watching context using OpenAI (ChatGPT).
 
 **[tiagoschmidt.com](https://www.tiagoschmidt.com/) · [GitHub](https://github.com/tiago-sch/)**
 
@@ -17,7 +17,7 @@ Instead of browsing genres, you describe how you feel. The app combines:
 - **Watching context** — alone / date night / with friends / background watch
 - **Mental state** — tired / curious / overstimulated / emotional
 
-Gemini interprets all of this together and returns:
+ChatGPT interprets all of this together and returns:
 
 - A **mood summary** — what your emotional state actually calls for
 - **3 curated picks** — each with a "why this matches you", energy/warmth scores, and emotional tags
@@ -32,7 +32,7 @@ Movie posters are fetched from TMDB (optional).
 - **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS v4**
 - **Framer Motion** — card entrance animations, loading state
-- **Google Gemini** (`gemini-2.5-flash`) — mood interpretation and recommendations
+- **OpenAI** (`gpt-4o-mini` by default, override with `VITE_OPENAI_MODEL`) — mood interpretation and recommendations
 - **TMDB API** — movie posters (optional)
 - Custom i18n — English and Brazilian Portuguese, no external library
 
@@ -55,8 +55,11 @@ cp .env.example .env
 Open `.env` and fill in your keys:
 
 ```env
-# Required — https://aistudio.google.com/app/apikey
-VITE_GEMINI_API_KEY=
+# Required — https://platform.openai.com/api-keys
+VITE_OPENAI_API_KEY=
+
+# Optional — defaults to gpt-4o-mini
+VITE_OPENAI_MODEL=
 
 # Optional — https://www.themoviedb.org/settings/api
 # Without this, cards render without poster images
@@ -76,7 +79,7 @@ npm run dev
 ```
 src/
   api/
-    gemini.ts       # Gemini API call + availability check
+    openai.ts       # OpenAI API call + availability check
     tmdb.ts         # TMDB poster fetching
   components/
     MoodForm.tsx    # Mood input form (text, sliders, chips)
@@ -95,6 +98,6 @@ src/
 
 ## i18n
 
-The app ships with **English** and **Brazilian Portuguese**. Toggle with the `PT` / `EN` button in the top-right corner. Prompts sent to Gemini are always in English regardless of the selected locale.
+The app ships with **English** and **Brazilian Portuguese**. Toggle with the `PT` / `EN` button in the top-right corner. Prompts sent to OpenAI are always in English regardless of the selected locale.
 
 To add a new language, implement the `T` interface in `src/i18n/translations.ts` and add the locale to the `Locale` type.
