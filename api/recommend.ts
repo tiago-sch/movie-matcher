@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkAvailability, getRecommendations, OpenAiApiError, OpenAiParseError, type Locale } from './_lib/openai.js';
-import { captchaConfigured, verifyCaptcha } from './_lib/recaptcha.js';
+import { captchaConfigured, verifyCaptcha } from './_lib/turnstile.js';
 import type { MoodInputs } from '../src/types.js';
 
 interface RecommendBody {
@@ -27,7 +27,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!body.mood || typeof body.mood !== 'object') return res.status(400).json({ error: 'bad-request' });
   const locale: Locale = body.locale === 'pt-BR' ? 'pt-BR' : 'en';
 
-  const captcha = await verifyCaptcha(body.token);
+  const forwarded = req.headers['x-forwarded-for'];
+  const remoteIp = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  const captcha = await verifyCaptcha(body.token, remoteIp);
   if (captcha === 'misconfigured') return res.status(500).json({ error: 'captcha-misconfigured' });
   if (captcha === 'rejected') return res.status(403).json({ error: 'captcha' });
   if (captcha === 'network-error') return res.status(502).json({ error: 'captcha-unavailable' });

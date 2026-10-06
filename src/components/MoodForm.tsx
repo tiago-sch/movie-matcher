@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { SliderInput } from './SliderInput';
 import { useLocale } from '../i18n/context';
 import type { MoodInputs } from '../types';
-import { loadRecaptcha } from '../api/recaptcha';
+import { mountTurnstile } from '../api/turnstile';
 
 const WATCHING_CONTEXT_KEYS = ['alone', 'date night', 'with friends', 'background watch'] as const;
 const MENTAL_STATE_KEYS = ['tired', 'curious', 'overstimulated', 'emotional'] as const;
@@ -12,7 +12,7 @@ type ContextKey = typeof WATCHING_CONTEXT_KEYS[number];
 type StateKey = typeof MENTAL_STATE_KEYS[number];
 
 interface MoodFormProps {
-  onSubmit: (mood: MoodInputs) => void;
+  onSubmit: (mood: MoodInputs, getCaptchaToken: () => Promise<string>) => void;
   isLoading: boolean;
   disabled?: boolean;
 }
@@ -23,9 +23,18 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
   const [sliders, setSliders] = useState({ energy: 5, tone: 5, pace: 5 });
   const [watchingContext, setWatchingContext] = useState<ContextKey[]>([]);
   const [mentalState, setMentalState] = useState<StateKey | ''>('');
+  const captchaRef = useRef<HTMLDivElement>(null);
+  const captchaApi = useRef<Awaited<ReturnType<typeof mountTurnstile>> | null>(null);
 
-  // Warm up the invisible reCAPTCHA Enterprise script as soon as the form is on screen
-  useEffect(() => { loadRecaptcha().catch(() => { /* surfaced on submit */ }); }, []);
+  useEffect(() => {
+    if (!captchaRef.current) return;
+    let cancelled = false;
+    let destroy: (() => void) | undefined;
+    mountTurnstile(captchaRef.current)
+      .then(api => { if (cancelled) api.destroy(); else { captchaApi.current = api; destroy = api.destroy; } })
+      .catch(() => { /* surfaced on submit */ });
+    return () => { cancelled = true; destroy?.(); captchaApi.current = null; };
+  }, []);
 
   const toggleContext = (ctx: ContextKey) => {
     setWatchingContext(prev => prev.includes(ctx) ? prev.filter(c => c !== ctx) : [...prev, ctx]);
@@ -33,7 +42,8 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ text, sliders, watchingContext: [...watchingContext], mentalState });
+    const getToken = () => captchaApi.current?.getToken() ?? Promise.reject(new Error('Captcha not ready'));
+    onSubmit({ text, sliders, watchingContext: [...watchingContext], mentalState }, getToken);
   };
 
   const hasInput = text.trim().length > 0 || watchingContext.length > 0 || mentalState !== '';
@@ -127,6 +137,9 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
           })}
         </div>
       </div>
+
+      {/* Turnstile (invisible unless a challenge is needed) */}
+      <div ref={captchaRef} className="flex justify-center empty:hidden" />
 
       {/* Submit */}
       <motion.button

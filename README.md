@@ -33,7 +33,7 @@ Movie posters are fetched from TMDB (optional).
 - **Tailwind CSS v4**
 - **Framer Motion** — card entrance animations, loading state
 - **OpenAI** (`gpt-4o-mini` by default, override with `OPENAI_MODEL`) — mood interpretation and recommendations, called from a Vercel serverless function so the key never reaches the browser
-- **reCAPTCHA Enterprise** (score-based, invisible) — bot protection, verified server-side
+- **Cloudflare Turnstile** (invisible, managed mode) — bot protection, verified server-side
 - **TMDB API** — movie posters (optional)
 - Custom i18n — English and Brazilian Portuguese, no external library
 
@@ -59,17 +59,14 @@ Open `.env` and fill in your keys. Variables without the `VITE_` prefix are serv
 # --- Server-side ---
 OPENAI_API_KEY=        # Required — https://platform.openai.com/api-keys
 OPENAI_MODEL=          # Optional — defaults to gpt-4o-mini
-GCP_PROJECT_ID=        # Required — Google Cloud project that owns the reCAPTCHA key
-RECAPTCHA_API_KEY=     # Required — Google Cloud API key with reCAPTCHA Enterprise API access
-RECAPTCHA_SITE_KEY=    # Required — same site key as below
-RECAPTCHA_MIN_SCORE=   # Optional — 0.0–1.0, defaults to 0.5
+TURNSTILE_SECRET_KEY=  # Required — Cloudflare Turnstile secret key
 
 # --- Client-side ---
-VITE_RECAPTCHA_SITE_KEY=   # Required — reCAPTCHA Enterprise score-based site key
+VITE_TURNSTILE_SITE_KEY=   # Required — Cloudflare Turnstile site key
 VITE_TMDB_API_KEY=         # Optional — https://www.themoviedb.org/settings/api
 ```
 
-To create the reCAPTCHA key: Google Cloud Console → Security → reCAPTCHA → Create key, type **Score-based**, add your production domain and `localhost`. Then create an API key under APIs & Services → Credentials, restricted to the reCAPTCHA Enterprise API.
+To create the Turnstile keys: dash.cloudflare.com → Turnstile → Add widget, mode **Managed**, add your production domain and `localhost`. Copy the site key and secret key.
 
 ### 3. Run
 
@@ -87,14 +84,14 @@ npx vercel dev
 
 ```
 api/
-  recommend.ts      # Vercel function: verifies reCAPTCHA, calls OpenAI
+  recommend.ts      # Vercel function: verifies Turnstile token, calls OpenAI
   _lib/
     openai.ts       # OpenAI prompt + API call + availability check (server-only)
-    recaptcha.ts    # reCAPTCHA Enterprise assessment (server-only)
+    turnstile.ts    # Turnstile siteverify call (server-only)
 src/
   api/
     recommend.ts    # Client for /api/recommend
-    recaptcha.ts    # Loads enterprise.js and fetches tokens
+    turnstile.ts    # Loads the Turnstile script and mounts the invisible widget
     tmdb.ts         # TMDB poster fetching
   components/
     MoodForm.tsx    # Mood input form (text, sliders, chips)

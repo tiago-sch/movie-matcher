@@ -6,7 +6,6 @@ import { MoodForm } from './components/MoodForm';
 import { LoadingState } from './components/LoadingState';
 import { Results } from './components/Results';
 import { getRecommendations, checkAvailability, RecommendError, type AvailabilityStatus } from './api/recommend';
-import { getCaptchaToken } from './api/recaptcha';
 import { fetchMoviePoster } from './api/tmdb';
 import type { MoodInputs, RecommendationResponse } from './types';
 import './App.css';
@@ -26,7 +25,7 @@ function AppInner() {
     checkAvailability().then(setApiStatus);
   }, []);
 
-  const handleSubmit = async (mood: MoodInputs) => {
+  const handleSubmit = async (mood: MoodInputs, getCaptchaToken: () => Promise<string>) => {
     setAppState('loading');
     setError('');
     gtag('event', 'search', {

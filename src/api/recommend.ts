@@ -16,7 +16,7 @@ export class RecommendError extends Error {
 }
 
 export async function checkAvailability(): Promise<AvailabilityStatus> {
-  if (!import.meta.env.VITE_RECAPTCHA_SITE_KEY) return 'captcha-misconfigured';
+  if (!import.meta.env.VITE_TURNSTILE_SITE_KEY) return 'captcha-misconfigured';
   try {
     const res = await fetch('/api/recommend');
     if (!res.ok) return 'network-error';
