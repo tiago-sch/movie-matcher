@@ -5,6 +5,9 @@ import { useLocale } from '../i18n/context';
 import { GENRE_KEYS, type GenreKey } from '../i18n/translations';
 import type { MoodInputs } from '../types';
 
+// Mirrors MAX_TEXT_LENGTH in api/recommend.ts — longer texts are rejected by the server
+const MAX_TEXT_LENGTH = 500;
+
 const WATCHING_CONTEXT_KEYS = ['alone', 'date night', 'with friends', 'background watch'] as const;
 const MENTAL_STATE_KEYS = ['tired', 'curious', 'overstimulated', 'emotional', 'elevated'] as const;
 
@@ -60,6 +63,7 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
           onChange={(e) => setText(e.target.value)}
           placeholder={t.moodPlaceholder}
           rows={4}
+          maxLength={MAX_TEXT_LENGTH}
           className="w-full resize-none rounded-xl p-3 text-sm leading-relaxed outline-none transition-colors"
           style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)', caretColor: 'var(--accent)' }}
           onFocus={e => (e.target.style.borderColor = 'rgba(245,158,11,0.4)')}

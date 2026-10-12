@@ -60,6 +60,7 @@ Open `.env` and fill in your keys. Variables without the `VITE_` prefix are serv
 OPENAI_API_KEY=        # Required — https://platform.openai.com/api-keys
 OPENAI_MODEL=          # Optional — defaults to gpt-4o-mini
 TURNSTILE_SECRET_KEY=  # Required — Cloudflare Turnstile secret key
+ALLOWED_HOSTNAMES=     # Optional — hostnames allowed to call the API (defaults to feelpick.com + localhost)
 
 # --- Client-side ---
 VITE_TURNSTILE_SITE_KEY=   # Required — Cloudflare Turnstile site key
@@ -87,7 +88,8 @@ api/
   recommend.ts      # Vercel function: verifies Turnstile token, calls OpenAI
   _lib/
     openai.ts       # OpenAI prompt + API call + availability check (server-only)
-    turnstile.ts    # Turnstile siteverify call (server-only)
+    turnstile.ts    # Turnstile siteverify call + hostname check (server-only)
+    hosts.ts        # Allowed hostnames for Origin / Turnstile checks
 src/
   api/
     recommend.ts    # Client for /api/recommend

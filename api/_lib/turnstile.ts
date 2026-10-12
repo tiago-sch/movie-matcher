@@ -1,3 +1,5 @@
+import { isAllowedHostname } from './hosts.js';
+
 export type CaptchaResult = 'ok' | 'misconfigured' | 'rejected' | 'network-error';
 
 export function captchaConfigured(): boolean {
@@ -9,7 +11,7 @@ export async function verifyCaptcha(token: string | undefined, remoteIp?: string
   if (!secret) return 'misconfigured';
   if (!token) return 'rejected';
 
-  interface SiteVerify { success?: boolean; 'error-codes'?: string[] }
+  interface SiteVerify { success?: boolean; hostname?: string; 'error-codes'?: string[] }
   let data: SiteVerify;
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -23,7 +25,8 @@ export async function verifyCaptcha(token: string | undefined, remoteIp?: string
     return 'network-error';
   }
 
-  if (data.success) return 'ok';
+  // A valid token solved on someone else's site (with our site key) must not be accepted
+  if (data.success) return isAllowedHostname(data.hostname) ? 'ok' : 'rejected';
   const codes = data['error-codes'] ?? [];
   if (codes.includes('invalid-input-secret') || codes.includes('missing-input-secret')) return 'misconfigured';
   return 'rejected';

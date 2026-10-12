@@ -155,7 +155,7 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
       ? `Language restriction: ONLY recommend films whose original spoken language is ${LANGUAGE_NAMES[locale]} — from any country where it is spoken. This applies to every recommendation and alternative.`
       : 'Language: any original language — favor a varied, international mix of countries.',
     exclude.length
-      ? `Already shown — do NOT recommend any of these again (anywhere in the response): ${exclude.slice(0, 60).join('; ')}`
+      ? `Already shown — do NOT recommend any of these again (anywhere in the response): ${exclude.join('; ')}`
       : '',
   ].filter(Boolean).join('\n');
 
