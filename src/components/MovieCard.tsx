@@ -28,6 +28,31 @@ function ScoreBar({ label, value, color }: ScoreBarProps) {
   );
 }
 
+function MetaLine({ year, genres }: { year?: string; genres?: string[] }) {
+  const parts = [year, ...(genres ?? []).slice(0, 3)].filter(Boolean);
+  if (!parts.length) return null;
+  return (
+    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{parts.join(' · ')}</p>
+  );
+}
+
+function Tags({ tags }: { tags?: string[] }) {
+  if (!tags?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map(tag => (
+        <span
+          key={tag}
+          className="px-2 py-0.5 rounded text-[11px]"
+          style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 interface MovieCardProps {
   movie: MovieRecommendation;
   index: number;
@@ -68,10 +93,8 @@ export function MovieCard({ movie, index, onSelect }: MovieCardProps) {
 
       <div className="p-4 flex flex-col gap-3 flex-1">
         <div>
-          <div className="flex items-baseline gap-2">
-            <h3 className="font-semibold text-white text-base leading-tight">{movie.title}</h3>
-            {movie.year && <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>{movie.year}</span>}
-          </div>
+          <h3 className="font-semibold text-white text-base leading-tight">{movie.title}</h3>
+          <MetaLine year={movie.year} genres={movie.genres} />
           <p className="text-[11px] mt-1" style={{ color: 'var(--accent)' }}>{t.viewDetails} →</p>
         </div>
 
@@ -80,19 +103,7 @@ export function MovieCard({ movie, index, onSelect }: MovieCardProps) {
           <ScoreBar label={t.warmthLabel} value={movie.warmth} color="#14b8a6" />
         </div>
 
-        {movie.emotionalTags && movie.emotionalTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {movie.emotionalTags.map(tag => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded text-[11px]"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="pt-1"><Tags tags={movie.emotionalTags} /></div>
       </div>
     </motion.button>
   );
@@ -115,15 +126,21 @@ export function AlternativeCard({ movie, index, onSelect }: AlternativeCardProps
       transition={{ delay: index * 0.08, duration: 0.3 }}
       whileHover={{ x: 2 }}
       whileTap={{ scale: 0.98 }}
-      className="rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-left cursor-pointer w-full"
+      className="rounded-xl p-3 flex items-start gap-3 text-left cursor-pointer w-full"
       style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
       aria-label={`${movie.title}${movie.year ? ` (${movie.year})` : ''} — ${t.viewDetails}`}
     >
-      <div className="flex items-baseline gap-2 min-w-0">
-        <span className="font-medium text-white text-sm truncate">{movie.title}</span>
-        {movie.year && <span className="text-[11px] shrink-0" style={{ color: 'var(--text-muted)' }}>{movie.year}</span>}
+      <div className="w-12 aspect-[2/3] shrink-0 rounded-md overflow-hidden bg-[#0a0a1a]">
+        {movie.posterUrl && <img src={movie.posterUrl} alt="" className="w-full h-full object-cover" />}
       </div>
-      <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>→</span>
+      <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+        <div>
+          <span className="font-medium text-white text-sm leading-snug">{movie.title}</span>
+          <MetaLine year={movie.year} genres={movie.genres} />
+        </div>
+        <Tags tags={movie.emotionalTags} />
+      </div>
+      <span className="text-xs shrink-0 pt-0.5" style={{ color: 'var(--text-muted)' }}>→</span>
     </motion.button>
   );
 }

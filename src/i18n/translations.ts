@@ -55,6 +55,7 @@ export interface T {
   cast: string;
   noDetails: string;
   viewOnTmdb: string;
+  viewOnImdb: string;
   close: string;
   errors: {
     parse: string;
@@ -158,6 +159,7 @@ export const translations: Record<Locale, T> = {
     cast:        'Cast',
     noDetails:   'No synopsis available for this title.',
     viewOnTmdb:  'View on TMDB',
+    viewOnImdb:  'View on IMDb',
     close:       'Close',
     errors: {
       parse:   'The AI returned an unexpected response. Please try again.',
@@ -260,6 +262,7 @@ export const translations: Record<Locale, T> = {
     cast:        'Elenco',
     noDetails:   'Sem sinopse disponível para este título.',
     viewOnTmdb:  'Ver no TMDB',
+    viewOnImdb:  'Ver no IMDb',
     close:       'Fechar',
     errors: {
       parse:   'A IA retornou uma resposta inesperada. Tente novamente.',

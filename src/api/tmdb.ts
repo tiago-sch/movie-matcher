@@ -22,6 +22,7 @@ export interface MovieDetails {
   genres: string[];
   cast: CastMember[];
   tmdbUrl: string;
+  imdbUrl: string | null;
 }
 
 function apiKey(): string | undefined {
@@ -85,7 +86,7 @@ export function fetchMovieDetails(title: string, year: string | undefined, local
       const d = await res.json() as {
         id: number; title: string; release_date?: string; overview?: string;
         poster_path?: string | null; backdrop_path?: string | null; vote_average?: number;
-        runtime?: number | null; genres?: { name: string }[];
+        runtime?: number | null; genres?: { name: string }[]; imdb_id?: string | null;
         credits?: { cast?: { name: string; character: string; profile_path?: string | null }[] };
       };
       return {
@@ -104,6 +105,7 @@ export function fetchMovieDetails(title: string, year: string | undefined, local
           profileUrl: c.profile_path ? `${TMDB_PROFILE_BASE}${c.profile_path}` : null,
         })),
         tmdbUrl: `https://www.themoviedb.org/movie/${d.id}`,
+        imdbUrl: d.imdb_id ? `https://www.imdb.com/title/${d.imdb_id}/` : null,
       };
     } catch {
       return null;

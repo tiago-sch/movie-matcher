@@ -155,17 +155,30 @@ export function MovieDetailModal({ movie, onClose }: MovieDetailModalProps) {
                   </div>
                 )}
 
-                {/* Link */}
-                {details?.tmdbUrl && (
-                  <a
-                    href={details.tmdbUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="self-start px-4 py-2 rounded-full text-sm font-medium"
-                    style={{ background: 'var(--accent)', color: '#1a1200' }}
-                  >
-                    {t.viewOnTmdb} ↗
-                  </a>
+                {/* Links */}
+                {details && (
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={details.tmdbUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 rounded-full text-sm font-medium"
+                      style={{ background: 'var(--accent)', color: '#1a1200' }}
+                    >
+                      {t.viewOnTmdb} ↗
+                    </a>
+                    {details.imdbUrl && (
+                      <a
+                        href={details.imdbUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-full text-sm font-medium"
+                        style={{ background: 'transparent', color: 'var(--accent)', border: '1px solid rgba(245,158,11,0.4)' }}
+                      >
+                        {t.viewOnImdb} ↗
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

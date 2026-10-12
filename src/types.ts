@@ -19,6 +19,7 @@ export interface MovieRecommendation {
   why: string;
   energy: number;
   warmth: number;
+  genres?: string[];
   emotionalTags?: string[];
   posterUrl?: string;
 }
@@ -27,6 +28,8 @@ export interface AlternativeMovie {
   title: string;
   year?: string;
   why: string;
+  genres?: string[];
+  emotionalTags?: string[];
   posterUrl?: string;
 }
 

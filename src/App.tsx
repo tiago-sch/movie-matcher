@@ -34,7 +34,13 @@ function AppInner() {
     err instanceof RecommendError && err.kind !== 'generic' ? t.errors[err.kind] : t.errors.generic;
 
   const attachPosters = async (data: RecommendationResponse) => {
-    await Promise.allSettled(data.recommendations.map(movie =>
+    const movies = [
+      ...data.recommendations,
+      ...(data.alternatives?.safer ?? []),
+      ...(data.alternatives?.bolder ?? []),
+      ...(data.alternatives?.weirder ?? []),
+    ];
+    await Promise.allSettled(movies.map(movie =>
       fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
     ));
   };
@@ -85,7 +91,7 @@ function AppInner() {
       const more = await getRecommendations(lastMood, locale, captchaToken, shown);
       const seen = new Set(results.recommendations.map(m => m.title.toLowerCase()));
       const fresh = more.recommendations.filter(m => !seen.has(m.title.toLowerCase())).slice(0, 3);
-      await attachPosters({ ...more, recommendations: fresh });
+      await attachPosters({ ...more, recommendations: fresh, alternatives: { safer: [], bolder: [], weirder: [] } });
       setResults({ ...results, recommendations: [...results.recommendations, ...fresh] });
     } catch (err) {
       setLoadMoreError(errorMessage(err));

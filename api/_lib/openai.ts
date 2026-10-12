@@ -3,8 +3,8 @@ import type { MoodInputs, RecommendationResponse } from '../../src/types.js';
 export type Locale = 'en' | 'pt-BR';
 
 const LANGUAGE_INSTRUCTIONS: Record<Locale, string> = {
-  'en': 'Write all prose fields (moodSummary, why, emotionalTags) in English.',
-  'pt-BR': 'Write all prose fields (moodSummary, why, emotionalTags) in Brazilian Portuguese. This only sets the language of your text — it must NOT bias which films you pick toward Brazilian or Portuguese-language cinema.',
+  'en': 'Write all prose fields (moodSummary, why, genres, emotionalTags) in English.',
+  'pt-BR': 'Write all prose fields (moodSummary, why, genres, emotionalTags) in Brazilian Portuguese. This only sets the language of your text — it must NOT bias which films you pick toward Brazilian or Portuguese-language cinema.',
 };
 
 const LANGUAGE_NAMES: Record<Locale, string> = {
@@ -43,13 +43,14 @@ Always respond with ONLY valid JSON matching this exact schema — no markdown, 
       "why": "1-2 sentences explaining why this movie fits this specific mood",
       "energy": 1,
       "warmth": 1,
+      "genres": ["style1", "style2"],
       "emotionalTags": ["tag1", "tag2", "tag3"]
     }
   ],
   "alternatives": {
-    "safer": [{"title": "...", "year": "...", "why": "..."}],
-    "bolder": [{"title": "...", "year": "...", "why": "..."}],
-    "weirder": [{"title": "...", "year": "...", "why": "..."}]
+    "safer": [{"title": "...", "year": "...", "why": "...", "genres": ["..."], "emotionalTags": ["...", "..."]}],
+    "bolder": [{"title": "...", "year": "...", "why": "...", "genres": ["..."], "emotionalTags": ["...", "..."]}],
+    "weirder": [{"title": "...", "year": "...", "why": "...", "genres": ["..."], "emotionalTags": ["...", "..."]}]
   }
 }
 
@@ -58,7 +59,8 @@ Rules:
 - Provide exactly 2 alternatives in each of safer/bolder/weirder
 - energy: 1=completely calm/meditative, 10=high-octane/intense
 - warmth: 1=cold/bleak/isolated, 10=warm/comforting/connected
-- emotionalTags: 2-4 short descriptive tags (e.g. "intimate", "melancholic", "visually stunning")
+- genres: 1-3 film styles/genres of the film (e.g. "drama", "sci-fi", "animation"), lowercase
+- emotionalTags: 2-4 short descriptive tags (2-3 for alternatives) (e.g. "intimate", "melancholic", "visually stunning")
 - Recommend real, existing films only
 - Prioritize less obvious choices — avoid defaulting to the most popular titles
 - Draw from world cinema as a whole: mix countries, regions and eras (Hollywood, Europe, Asia, Latin America, Africa, Middle East…). Do not concentrate on a single country unless the viewer explicitly asks for it or a language restriction is given
