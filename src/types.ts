@@ -34,6 +34,8 @@ export interface AlternativeMovie {
 }
 
 export interface RecommendationResponse {
+  title: string;   // short evocative name for this "feel"
+  tagline: string; // one-line description
   moodSummary: string;
   recommendations: MovieRecommendation[];
   alternatives: {
@@ -41,4 +43,27 @@ export interface RecommendationResponse {
     bolder: AlternativeMovie[];
     weirder: AlternativeMovie[];
   };
+}
+
+export type FeelLocale = 'en' | 'pt-BR';
+
+/** A saved search: everything needed to show the results again without calling the model. */
+export interface Feel {
+  id: string;
+  createdAt: string; // ISO date
+  locale: FeelLocale;
+  mood: MoodInputs;
+  results: RecommendationResponse;
+}
+
+export interface FeelSummary {
+  id: string;
+  createdAt: string;
+  title: string;
+  tagline: string;
+  posterUrl?: string;
+}
+
+export interface RecommendResult extends RecommendationResponse {
+  id?: string; // absent when the database is not configured
 }

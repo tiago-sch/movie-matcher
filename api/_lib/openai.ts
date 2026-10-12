@@ -3,8 +3,8 @@ import type { MoodInputs, RecommendationResponse } from '../../src/types.js';
 export type Locale = 'en' | 'pt-BR';
 
 const LANGUAGE_INSTRUCTIONS: Record<Locale, string> = {
-  'en': 'Write all prose fields (moodSummary, why, genres, emotionalTags) in English.',
-  'pt-BR': 'Write all prose fields (moodSummary, why, genres, emotionalTags) in Brazilian Portuguese. This only sets the language of your text — it must NOT bias which films you pick toward Brazilian or Portuguese-language cinema.',
+  'en': 'Write all prose fields (title, tagline, moodSummary, why, genres, emotionalTags) in English.',
+  'pt-BR': 'Write all prose fields (title, tagline, moodSummary, why, genres, emotionalTags) in Brazilian Portuguese. This only sets the language of your text — it must NOT bias which films you pick toward Brazilian or Portuguese-language cinema.',
 };
 
 const LANGUAGE_NAMES: Record<Locale, string> = {
@@ -12,7 +12,7 @@ const LANGUAGE_NAMES: Record<Locale, string> = {
   'pt-BR': 'Portuguese',
 };
 
-const MENTAL_STATE_GUIDANCE: Record<string, string> = {
+export const MENTAL_STATE_GUIDANCE: Record<string, string> = {
   tired: 'tired — low cognitive load, easy to follow, nothing that demands intense focus',
   curious: 'curious — wants ideas, discovery, something that rewards attention',
   overstimulated: 'overstimulated — needs calm, gentle, uncluttered films; avoid loud, chaotic or frantic ones',
@@ -20,14 +20,14 @@ const MENTAL_STATE_GUIDANCE: Record<string, string> = {
   elevated: 'elevated (relaxed, a little high) — favor hypnotic, visually lush, immersive, surreal or absurdly funny films with strong sound/visual design; easy-to-follow plots over convoluted ones; avoid anxiety-inducing horror or bleak, heavy dramas. Never mention drugs or being high in your text — phrase it as a dreamy, sensory, "lose yourself in it" vibe',
 };
 
-const GENRE_LABELS: Record<string, string> = {
+export const GENRE_LABELS: Record<string, string> = {
   drama: 'drama', comedy: 'comedy', romance: 'romance', thriller: 'thriller', horror: 'horror',
   'sci-fi': 'science fiction', fantasy: 'fantasy', action: 'action', crime: 'crime', mystery: 'mystery',
   animation: 'animation', documentary: 'documentary', musical: 'musical', war: 'war', western: 'western',
   arthouse: 'arthouse / auteur cinema',
 };
 
-const WATCHING_CONTEXTS = new Set(['alone', 'date night', 'with friends', 'background watch']);
+export const WATCHING_CONTEXTS = new Set(['alone', 'date night', 'with friends', 'background watch']);
 
 const SYSTEM_PROMPT = `You are a cinematic mood interpreter. You analyze emotional states, energy levels, and viewing contexts to recommend movies that deeply resonate with how someone feels right now — not just genre preferences.
 
@@ -35,6 +35,8 @@ Your recommendations should feel curated by someone who intimately knows both th
 
 Always respond with ONLY valid JSON matching this exact schema — no markdown, no code blocks, no explanation:
 {
+  "title": "2-5 word evocative name for this mood/search, like a playlist title",
+  "tagline": "one short sentence (max ~15 words) describing the vibe of this selection",
   "moodSummary": "2-3 sentences interpreting the viewer's emotional state and what cinematic experience they need right now",
   "recommendations": [
     {
@@ -55,7 +57,7 @@ Always respond with ONLY valid JSON matching this exact schema — no markdown, 
 }
 
 Rules:
-- Provide exactly 3 main recommendations
+- Provide exactly 6 main recommendations, all different films
 - Provide exactly 2 alternatives in each of safer/bolder/weirder
 - energy: 1=completely calm/meditative, 10=high-octane/intense
 - warmth: 1=cold/bleak/isolated, 10=warm/comforting/connected
@@ -126,7 +128,7 @@ export class OpenAiParseError extends Error {
   }
 }
 
-export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en', exclude: string[] = []): Promise<RecommendationResponse> {
+export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'): Promise<RecommendationResponse> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
 
@@ -154,9 +156,6 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
     mood.sameLanguageOnly
       ? `Language restriction: ONLY recommend films whose original spoken language is ${LANGUAGE_NAMES[locale]} — from any country where it is spoken. This applies to every recommendation and alternative.`
       : 'Language: any original language — favor a varied, international mix of countries.',
-    exclude.length
-      ? `Already shown — do NOT recommend any of these again (anywhere in the response): ${exclude.join('; ')}`
-      : '',
   ].filter(Boolean).join('\n');
 
   let text: string;
@@ -183,9 +182,21 @@ export async function getRecommendations(mood: MoodInputs, locale: Locale = 'en'
   // Strip markdown code fences if the model wraps the JSON anyway
   const json = text.startsWith('```') ? text.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '') : text;
 
+  let parsed: RecommendationResponse;
   try {
-    return JSON.parse(json) as RecommendationResponse;
+    parsed = JSON.parse(json) as RecommendationResponse;
   } catch (err) {
     throw new OpenAiParseError('Failed to parse OpenAI response', err);
   }
+  if (!Array.isArray(parsed?.recommendations) || !parsed.recommendations.length) {
+    throw new OpenAiParseError('OpenAI response is missing recommendations');
+  }
+  parsed.title = typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : 'Feel';
+  parsed.tagline = typeof parsed.tagline === 'string' ? parsed.tagline.trim() : '';
+  parsed.alternatives = {
+    safer: Array.isArray(parsed.alternatives?.safer) ? parsed.alternatives.safer : [],
+    bolder: Array.isArray(parsed.alternatives?.bolder) ? parsed.alternatives.bolder : [],
+    weirder: Array.isArray(parsed.alternatives?.weirder) ? parsed.alternatives.weirder : [],
+  };
+  return parsed;
 }

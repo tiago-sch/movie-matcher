@@ -51,22 +51,6 @@ async function searchMovieId(title: string, year?: string): Promise<number | nul
   }
 }
 
-export async function fetchMoviePoster(title: string, year?: string): Promise<string | null> {
-  const key = apiKey();
-  if (!key) return null;
-  try {
-    const params = new URLSearchParams({ api_key: key, query: title });
-    if (year) params.set('year', year);
-    const res = await fetch(`${TMDB_BASE}/search/movie?${params}`);
-    if (!res.ok) return null;
-    const data = await res.json() as { results?: { poster_path?: string | null }[] };
-    const poster = data.results?.[0]?.poster_path;
-    return poster ? `${TMDB_IMG_BASE}${poster}` : null;
-  } catch {
-    return null;
-  }
-}
-
 const detailsCache = new Map<string, Promise<MovieDetails | null>>();
 
 export function fetchMovieDetails(title: string, year: string | undefined, locale: Locale): Promise<MovieDetails | null> {

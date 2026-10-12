@@ -61,13 +61,27 @@ OPENAI_API_KEY=        # Required — https://platform.openai.com/api-keys
 OPENAI_MODEL=          # Optional — defaults to gpt-4o-mini
 TURNSTILE_SECRET_KEY=  # Required — Cloudflare Turnstile secret key
 ALLOWED_HOSTNAMES=     # Optional — hostnames allowed to call the API (defaults to feelpick.com + localhost)
+FIREBASE_SERVICE_ACCOUNT= # Optional — service account JSON; enables shareable links + My feels
 
 # --- Client-side ---
 VITE_TURNSTILE_SITE_KEY=   # Required — Cloudflare Turnstile site key
 VITE_TMDB_API_KEY=         # Optional — https://www.themoviedb.org/settings/api
+VITE_FIREBASE_API_KEY=     # Optional — Firebase web config; enables Google sign-in
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
 ```
 
 To create the Turnstile keys: dash.cloudflare.com → Turnstile → Add widget, mode **Managed**, add your production domain and `localhost`. Copy the site key and secret key.
+
+### Firebase (optional — shareable links and "My feels")
+
+1. Create a project at console.firebase.google.com and add a **Web** app; copy its config into the `VITE_FIREBASE_*` vars.
+2. **Authentication** → Sign-in method → enable **Google**; add your production domain under Authorized domains.
+3. **Firestore Database** → create it in production mode and keep the rules fully locked (`allow read, write: if false;`) — only the API functions touch the database, through the Admin SDK.
+4. Project settings → Service accounts → **Generate new private key**; paste the whole JSON into `FIREBASE_SERVICE_ACCOUNT`.
+
+Every search is stored in `feels/{id}` and served at `/f/{id}` without calling OpenAI again. Searches made while signed in are also indexed under `users/{uid}/feels`.
 
 ### 3. Run
 
@@ -85,10 +99,15 @@ npx vercel dev
 
 ```
 api/
-  recommend.ts      # Vercel function: verifies Turnstile token, calls OpenAI
+  recommend.ts      # Vercel function: verifies Turnstile token, calls OpenAI, saves the feel
+  feel.ts           # GET a saved feel by id (public)
+  feels.ts          # List / remove the signed-in user's feels
   _lib/
     openai.ts       # OpenAI prompt + API call + availability check (server-only)
     turnstile.ts    # Turnstile siteverify call + hostname check (server-only)
+    firebase.ts     # Firebase Admin init + ID token verification
+    feels.ts        # Save / load / list feels in Firestore
+    tmdb.ts         # Server-side poster lookup so saved feels include posters
     hosts.ts        # Allowed hostnames for Origin / Turnstile checks
 src/
   api/

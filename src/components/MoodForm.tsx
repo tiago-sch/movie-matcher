@@ -16,18 +16,22 @@ type StateKey = typeof MENTAL_STATE_KEYS[number];
 
 interface MoodFormProps {
   onSubmit: (mood: MoodInputs) => void;
+  /** Pre-fills the form, e.g. when coming back from a result */
+  initial?: MoodInputs | null;
+  /** Rendered just above the submit button */
+  footer?: React.ReactNode;
   isLoading: boolean;
   disabled?: boolean;
 }
 
-export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProps) {
+export function MoodForm({ onSubmit, initial, footer, isLoading, disabled = false }: MoodFormProps) {
   const { t } = useLocale();
-  const [text, setText] = useState('');
-  const [sliders, setSliders] = useState({ energy: 5, tone: 5, pace: 5 });
-  const [watchingContext, setWatchingContext] = useState<ContextKey[]>([]);
-  const [mentalState, setMentalState] = useState<StateKey | ''>('');
-  const [genres, setGenres] = useState<GenreKey[]>([]);
-  const [sameLanguageOnly, setSameLanguageOnly] = useState(false);
+  const [text, setText] = useState(initial?.text ?? '');
+  const [sliders, setSliders] = useState(initial?.sliders ?? { energy: 5, tone: 5, pace: 5 });
+  const [watchingContext, setWatchingContext] = useState<ContextKey[]>((initial?.watchingContext ?? []) as ContextKey[]);
+  const [mentalState, setMentalState] = useState<StateKey | ''>((initial?.mentalState ?? '') as StateKey | '');
+  const [genres, setGenres] = useState<GenreKey[]>((initial?.genres ?? []) as GenreKey[]);
+  const [sameLanguageOnly, setSameLanguageOnly] = useState(initial?.sameLanguageOnly ?? false);
 
   const toggleContext = (ctx: ContextKey) => {
     setWatchingContext(prev => prev.includes(ctx) ? prev.filter(c => c !== ctx) : [...prev, ctx]);
@@ -199,6 +203,8 @@ export function MoodForm({ onSubmit, isLoading, disabled = false }: MoodFormProp
           </span>
         </button>
       </div>
+
+      {footer}
 
       {/* Submit */}
       <motion.button

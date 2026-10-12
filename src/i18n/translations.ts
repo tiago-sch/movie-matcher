@@ -45,10 +45,20 @@ export interface T {
   bolderDesc: string;
   weirder: string;
   weirderDesc: string;
-  startOver: string;
   tryAgain: string;
-  loadMore: string;
-  loadingMore: string;
+  signIn: string;
+  signOut: string;
+  myFeels: string;
+  myFeelsEmpty: string;
+  myFeelsSignIn: string;
+  signInToSave: string;
+  newSearch: string;
+  copyLink: string;
+  linkCopied: string;
+  loadingFeel: string;
+  feelNotFound: string;
+  pageNotFound: string;
+  remove: string;
   viewDetails: string;
   whyThisFits: string;
   overview: string;
@@ -149,10 +159,20 @@ export const translations: Record<Locale, T> = {
     bolderDesc:  'Push yourself a little',
     weirder:     'Weirder pick',
     weirderDesc: 'Fully commit to the vibe',
-    startOver:   'Start over',
     tryAgain:    'Try again',
-    loadMore:    'Show 3 more',
-    loadingMore: 'Finding more…',
+    signIn:        'Sign in with Google',
+    signOut:       'Sign out',
+    myFeels:       'My feels',
+    myFeelsEmpty:  "No feels yet. Every search you make while signed in lands here.",
+    myFeelsSignIn: 'Sign in to keep every search you make.',
+    signInToSave:  'Sign in to save your searches to My feels',
+    newSearch:     'New search',
+    copyLink:      'Copy link',
+    linkCopied:    'Link copied',
+    loadingFeel:   'Loading feel…',
+    feelNotFound:  "This feel doesn't exist (or the link is broken).",
+    pageNotFound:  "This page doesn't exist.",
+    remove:        'Remove',
     viewDetails: 'View details',
     whyThisFits: 'Why this fits',
     overview:    'Overview',
@@ -252,10 +272,20 @@ export const translations: Record<Locale, T> = {
     bolderDesc:  'Se desafie um pouco',
     weirder:     'Escolha diferente',
     weirderDesc: 'Mergulhe de cabeça no clima',
-    startOver:   'Começar de novo',
     tryAgain:    'Tentar novamente',
-    loadMore:    'Mostrar mais 3',
-    loadingMore: 'Buscando mais…',
+    signIn:        'Entrar com Google',
+    signOut:       'Sair',
+    myFeels:       'Meus feels',
+    myFeelsEmpty:  'Nenhum feel ainda. Toda busca que você fizer logado aparece aqui.',
+    myFeelsSignIn: 'Entre para guardar todas as suas buscas.',
+    signInToSave:  'Entre para salvar suas buscas em Meus feels',
+    newSearch:     'Nova busca',
+    copyLink:      'Copiar link',
+    linkCopied:    'Link copiado',
+    loadingFeel:   'Carregando feel…',
+    feelNotFound:  'Esse feel não existe (ou o link está quebrado).',
+    pageNotFound:  'Essa página não existe.',
+    remove:        'Remover',
     viewDetails: 'Ver detalhes',
     whyThisFits: 'Por que combina',
     overview:    'Sinopse',

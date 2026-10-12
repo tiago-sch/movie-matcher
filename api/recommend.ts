@@ -1,12 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { checkAvailability, getRecommendations, OpenAiApiError, OpenAiParseError, type Locale } from './_lib/openai.js';
+import {
+  checkAvailability, getRecommendations, OpenAiApiError, OpenAiParseError, type Locale,
+  GENRE_LABELS, MENTAL_STATE_GUIDANCE, WATCHING_CONTEXTS,
+} from './_lib/openai.js';
 import { captchaConfigured, verifyCaptcha } from './_lib/turnstile.js';
 import { isAllowedOrigin } from './_lib/hosts.js';
-import type { MoodInputs } from '../src/types.js';
+import { userIdFromAuthHeader } from './_lib/firebase.js';
+import { saveFeel } from './_lib/feels.js';
+import { attachPosters } from './_lib/tmdb.js';
+import type { MoodInputs, RecommendResult } from '../src/types.js';
 
 const MAX_TEXT_LENGTH = 500;
-const MAX_EXCLUDE = 60;
-const MAX_EXCLUDE_ITEM_LENGTH = 200;
 
 const strings = (value: unknown, max: number): string[] =>
   Array.isArray(value) ? value.filter((x): x is string => typeof x === 'string').slice(0, max) : [];
@@ -24,9 +28,9 @@ function sanitizeMood(raw: unknown): MoodInputs | null {
   return {
     text,
     sliders: { energy: sliderValue(sliders.energy), tone: sliderValue(sliders.tone), pace: sliderValue(sliders.pace) },
-    watchingContext: strings(mood.watchingContext, 10),
-    mentalState: typeof mood.mentalState === 'string' ? mood.mentalState : '',
-    genres: strings(mood.genres, 20),
+    watchingContext: [...new Set(strings(mood.watchingContext, 10).filter(c => WATCHING_CONTEXTS.has(c)))],
+    mentalState: typeof mood.mentalState === 'string' && Object.hasOwn(MENTAL_STATE_GUIDANCE, mood.mentalState) ? mood.mentalState : '',
+    genres: [...new Set(strings(mood.genres, 20).filter(g => Object.hasOwn(GENRE_LABELS, g)))],
     sameLanguageOnly: mood.sameLanguageOnly === true,
   };
 }
@@ -35,7 +39,6 @@ interface RecommendBody {
   mood?: MoodInputs;
   locale?: Locale;
   token?: string;
-  exclude?: string[];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -72,9 +75,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (captcha === 'network-error') return res.status(502).json({ error: 'captcha-unavailable' });
 
   try {
-    const exclude = strings(body.exclude, MAX_EXCLUDE).map(x => x.slice(0, MAX_EXCLUDE_ITEM_LENGTH));
-    const data = await getRecommendations(mood, locale, exclude);
-    return res.status(200).json(data);
+    const [data, ownerId] = await Promise.all([
+      getRecommendations(mood, locale),
+      userIdFromAuthHeader(req.headers.authorization),
+    ]);
+    await attachPosters(data);
+    let id: string | null = null;
+    try {
+      id = await saveFeel(mood, locale, data, ownerId);
+    } catch (err) {
+      // Still show the results even if they could not be saved
+      console.error('Failed to save feel', err);
+    }
+    const result: RecommendResult = id ? { ...data, id } : data;
+    return res.status(200).json(result);
   } catch (err) {
     if (err instanceof OpenAiParseError) return res.status(502).json({ error: 'parse' });
     if (err instanceof OpenAiApiError) return res.status(502).json({ error: 'api' });

@@ -2,105 +2,28 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LocaleProvider, useLocale } from './i18n/context';
 import type { Locale } from './i18n/translations';
-import { MoodForm } from './components/MoodForm';
-import { LoadingState } from './components/LoadingState';
-import { Results } from './components/Results';
-import { getRecommendations, checkAvailability, RecommendError, type AvailabilityStatus } from './api/recommend';
-import { fetchMoviePoster } from './api/tmdb';
+import { AuthProvider } from './auth/AuthProvider';
+import { AccountMenu } from './components/AccountMenu';
+import { StatusMessage } from './components/StatusMessage';
+import { HomePage } from './pages/HomePage';
+import { FeelPage } from './pages/FeelPage';
+import { MyFeelsPage } from './pages/MyFeelsPage';
+import { checkAvailability, type AvailabilityStatus } from './api/recommend';
 import { useTurnstile } from './hooks/useTurnstile';
-import type { MoodInputs, RecommendationResponse } from './types';
+import { linkClick, matchRoute, navigate, usePath } from './lib/router';
+import type { MoodInputs } from './types';
 import './App.css';
-
-type AppState = 'form' | 'loading' | 'results' | 'error';
-
-declare function gtag(command: string, action: string, params?: Record<string, unknown>): void;
 
 function AppInner() {
   const { t, locale, setLocale } = useLocale();
-  const [appState, setAppState] = useState<AppState>('form');
-  const [results, setResults] = useState<RecommendationResponse | null>(null);
-  const [error, setError] = useState('');
+  const route = matchRoute(usePath());
   const [apiStatus, setApiStatus] = useState<AvailabilityStatus | 'checking'>('checking');
   const [lastMood, setLastMood] = useState<MoodInputs | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const { containerRef: captchaRef, getToken: getCaptchaToken } = useTurnstile();
 
   useEffect(() => {
     checkAvailability().then(setApiStatus);
   }, []);
-
-  const errorMessage = (err: unknown) =>
-    err instanceof RecommendError && err.kind !== 'generic' ? t.errors[err.kind] : t.errors.generic;
-
-  const attachPosters = async (data: RecommendationResponse) => {
-    const movies = [
-      ...data.recommendations,
-      ...(data.alternatives?.safer ?? []),
-      ...(data.alternatives?.bolder ?? []),
-      ...(data.alternatives?.weirder ?? []),
-    ];
-    await Promise.allSettled(movies.map(movie =>
-      fetchMoviePoster(movie.title, movie.year).then(url => { if (url) movie.posterUrl = url; })
-    ));
-  };
-
-  const handleSubmit = async (mood: MoodInputs) => {
-    setAppState('loading');
-    setError('');
-    setLoadMoreError(null);
-    setLastMood(mood);
-    gtag('event', 'search', {
-      mood_text: mood.text,
-      energy: mood.sliders.energy,
-      tone: mood.sliders.tone,
-      pace: mood.sliders.pace,
-      watching_context: mood.watchingContext.join(', ') || 'none',
-      mental_state: mood.mentalState || 'none',
-      genres: mood.genres.join(', ') || 'none',
-      same_language_only: mood.sameLanguageOnly,
-      locale,
-    });
-    try {
-      const captchaToken = await getCaptchaToken();
-      if (!captchaToken) throw new RecommendError('captcha');
-      const data = await getRecommendations(mood, locale, captchaToken);
-      await attachPosters(data);
-      setResults(data);
-      setAppState('results');
-    } catch (err) {
-      setError(errorMessage(err));
-      setAppState('error');
-    }
-  };
-
-  const handleLoadMore = async () => {
-    if (!lastMood || !results || loadingMore) return;
-    setLoadingMore(true);
-    setLoadMoreError(null);
-    gtag('event', 'load_more', { shown: results.recommendations.length, locale });
-    try {
-      const shown = [
-        ...results.recommendations,
-        ...results.alternatives.safer,
-        ...results.alternatives.bolder,
-        ...results.alternatives.weirder,
-      ].map(m => (m.year ? `${m.title} (${m.year})` : m.title));
-      const captchaToken = await getCaptchaToken();
-      if (!captchaToken) throw new RecommendError('captcha');
-      const more = await getRecommendations(lastMood, locale, captchaToken, shown);
-      const seen = new Set(results.recommendations.map(m => m.title.toLowerCase()));
-      const fresh = more.recommendations.filter(m => !seen.has(m.title.toLowerCase())).slice(0, 3);
-      await attachPosters({ ...more, recommendations: fresh, alternatives: { safer: [], bolder: [], weirder: [] } });
-      setResults({ ...results, recommendations: [...results.recommendations, ...fresh] });
-    } catch (err) {
-      setLoadMoreError(errorMessage(err));
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  const handleReset = () => { setResults(null); setError(''); setLoadMoreError(null); setAppState('form'); };
 
   const apiReady = apiStatus === 'ok';
   const warning = apiStatus !== 'ok' && apiStatus !== 'checking'
@@ -117,43 +40,48 @@ function AppInner() {
         <motion.header
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10 relative"
+          className="text-center mb-10"
         >
+          <div className="flex justify-end items-center gap-2 mb-4 min-h-7">
+            <AccountMenu />
+            {/* Lang switcher */}
+            <button
+              onClick={() => setLocale(otherLocale)}
+              className="px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+              style={{
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+                background: 'transparent',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(245,158,11,0.4)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
+              }}
+            >
+              {t.langSwitch}
+            </button>
+          </div>
           <h1
             className="text-4xl sm:text-5xl font-bold tracking-tight"
             style={{ color: 'white', letterSpacing: '-0.03em' }}
           >
-            feel<span style={{ color: 'var(--accent)' }}>pick</span>
+            <a href="/" onClick={linkClick('/')}>
+              feel<span style={{ color: 'var(--accent)' }}>pick</span>
+            </a>
           </h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
             {t.subtitle}
           </p>
 
-          {/* Lang switcher */}
-          <button
-            onClick={() => setLocale(otherLocale)}
-            className="absolute right-0 top-1 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors"
-            style={{
-              border: '1px solid var(--border)',
-              color: 'var(--text-muted)',
-              background: 'transparent',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(245,158,11,0.4)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)';
-            }}
-          >
-            {t.langSwitch}
-          </button>
         </motion.header>
 
         {/* API status banner */}
         <AnimatePresence>
-          {apiStatus === 'checking' && (
+          {route.name === 'home' && apiStatus === 'checking' && (
             <motion.div
               key="checking"
               initial={{ opacity: 0, y: -6 }}
@@ -172,7 +100,7 @@ function AppInner() {
             </motion.div>
           )}
 
-          {warning && (
+          {route.name === 'home' && warning && (
             <motion.div
               key="warning"
               initial={{ opacity: 0, y: -6 }}
@@ -188,38 +116,22 @@ function AppInner() {
 
         {/* Main content */}
         <AnimatePresence mode="wait">
-          {appState === 'form' && (
-            <motion.div key="form" exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-              <MoodForm onSubmit={handleSubmit} isLoading={false} disabled={!apiReady} />
-            </motion.div>
-          )}
-          {appState === 'loading' && (
-            <motion.div key="loading" exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <LoadingState />
-            </motion.div>
-          )}
-          {appState === 'results' && results && (
-            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              <Results data={results} onReset={handleReset} onLoadMore={handleLoadMore} loadingMore={loadingMore} loadMoreError={loadMoreError} />
-            </motion.div>
-          )}
-          {appState === 'error' && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center gap-4 py-16 text-center"
-            >
-              <p className="text-base" style={{ color: 'rgba(252,165,165,0.9)' }}>{error}</p>
-              <button
-                onClick={handleReset}
-                className="px-6 py-2.5 rounded-full text-sm cursor-pointer"
-                style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'transparent' }}
-              >
-                {t.tryAgain}
-              </button>
-            </motion.div>
-          )}
+          <motion.div
+            key={route.name === 'feel' ? `feel-${route.id}` : route.name}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {route.name === 'home' && (
+              <HomePage apiReady={apiReady} getCaptchaToken={getCaptchaToken} lastMood={lastMood} onMoodChange={setLastMood} />
+            )}
+            {route.name === 'feel' && <FeelPage id={route.id} />}
+            {route.name === 'my-feels' && <MyFeelsPage />}
+            {route.name === 'not-found' && (
+              <StatusMessage message={t.pageNotFound} action={{ label: t.newSearch, onClick: () => navigate('/') }} />
+            )}
+          </motion.div>
         </AnimatePresence>
       </div>
 
@@ -263,7 +175,9 @@ function AppInner() {
 export default function App() {
   return (
     <LocaleProvider>
-      <AppInner />
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
     </LocaleProvider>
   );
 }

@@ -1,4 +1,4 @@
-import type { MoodInputs, RecommendationResponse } from '../types';
+import type { MoodInputs, RecommendResult } from '../types';
 import type { Locale } from '../i18n/translations';
 
 export type AvailabilityStatus =
@@ -31,14 +31,17 @@ export async function getRecommendations(
   mood: MoodInputs,
   locale: Locale,
   token: string,
-  exclude: string[] = [],
-): Promise<RecommendationResponse> {
+  idToken: string | null = null,
+): Promise<RecommendResult> {
   let res: Response;
   try {
     res = await fetch('/api/recommend', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mood, locale, token, exclude }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
+      body: JSON.stringify({ mood, locale, token }),
     });
   } catch {
     throw new RecommendError('api', 'Network error');
@@ -54,5 +57,5 @@ export async function getRecommendations(
     throw new RecommendError(kind, `HTTP ${res.status}`);
   }
 
-  return res.json() as Promise<RecommendationResponse>;
+  return res.json() as Promise<RecommendResult>;
 }
