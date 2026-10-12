@@ -115,7 +115,7 @@ function AppInner() {
             className="text-4xl sm:text-5xl font-bold tracking-tight"
             style={{ color: 'white', letterSpacing: '-0.03em' }}
           >
-            movie<span style={{ color: 'var(--accent)' }}>matcher</span>
+            feel<span style={{ color: 'var(--accent)' }}>pick</span>
           </h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
             {t.subtitle}

@@ -1,8 +1,8 @@
-# MovieMatcher
+# Feelpick
 
 Tell it how you feel. It finds your film.
 
-MovieMatcher interprets your emotional state — not just genre preferences — and recommends movies that match your mood, energy, and watching context using OpenAI (ChatGPT).
+Feelpick interprets your emotional state — not just genre preferences — and recommends movies that match your mood, energy, and watching context using OpenAI (ChatGPT).
 
 **[tiagoschmidt.com](https://www.tiagoschmidt.com/) · [GitHub](https://github.com/tiago-sch/)**
 
