@@ -9,6 +9,8 @@ export interface MoodInputs {
   sliders: MoodSliders;
   watchingContext: string[];
   mentalState: string;
+  genres: string[];
+  sameLanguageOnly: boolean;
 }
 
 export interface MovieRecommendation {

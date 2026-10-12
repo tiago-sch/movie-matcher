@@ -51,6 +51,8 @@ function AppInner() {
       pace: mood.sliders.pace,
       watching_context: mood.watchingContext.join(', ') || 'none',
       mental_state: mood.mentalState || 'none',
+      genres: mood.genres.join(', ') || 'none',
+      same_language_only: mood.sameLanguageOnly,
       locale,
     });
     try {

@@ -1,5 +1,11 @@
 export type Locale = 'en' | 'pt-BR';
 
+export const GENRE_KEYS = [
+  'drama', 'comedy', 'romance', 'thriller', 'horror', 'sci-fi', 'fantasy', 'action',
+  'crime', 'mystery', 'animation', 'documentary', 'musical', 'war', 'western', 'arthouse',
+] as const;
+export type GenreKey = typeof GENRE_KEYS[number];
+
 export interface T {
   langSwitch: string;
   subtitle: string;
@@ -20,7 +26,13 @@ export interface T {
   watchingContext: string;
   contexts: Record<'alone' | 'date night' | 'with friends' | 'background watch', string>;
   mentalState: string;
-  states: Record<'tired' | 'curious' | 'overstimulated' | 'emotional', string>;
+  states: Record<'tired' | 'curious' | 'overstimulated' | 'emotional' | 'elevated', string>;
+  genresLabel: string;
+  genresHint: string;
+  genres: Record<GenreKey, string>;
+  languageLabel: string;
+  sameLanguageOnly: string;
+  sameLanguageOnlyHint: string;
   submit: string;
   submitting: string;
   apiUnavailable: string;
@@ -94,7 +106,31 @@ export const translations: Record<Locale, T> = {
       curious:        'curious',
       overstimulated: 'overstimulated',
       emotional:      'emotional',
+      elevated:       'elevated',
     },
+    genresLabel: 'Film style',
+    genresHint: 'optional · pick as many as you like',
+    genres: {
+      drama:       'drama',
+      comedy:      'comedy',
+      romance:     'romance',
+      thriller:    'thriller',
+      horror:      'horror',
+      'sci-fi':    'sci-fi',
+      fantasy:     'fantasy',
+      action:      'action',
+      crime:       'crime',
+      mystery:     'mystery',
+      animation:   'animation',
+      documentary: 'documentary',
+      musical:     'musical',
+      war:         'war',
+      western:     'western',
+      arthouse:    'arthouse',
+    },
+    languageLabel: 'Language',
+    sameLanguageOnly: 'Only English-language films',
+    sameLanguageOnlyHint: 'Otherwise, picks come from world cinema',
     submit:         'Find My Movie',
     submitting:     'Finding your movies…',
     apiUnavailable: 'API unavailable',
@@ -172,7 +208,31 @@ export const translations: Record<Locale, T> = {
       curious:        'curioso',
       overstimulated: 'superestimulado',
       emotional:      'emotivo',
+      elevated:       'nas nuvens',
     },
+    genresLabel: 'Estilo de filme',
+    genresHint: 'opcional · escolha quantos quiser',
+    genres: {
+      drama:       'drama',
+      comedy:      'comédia',
+      romance:     'romance',
+      thriller:    'suspense',
+      horror:      'terror',
+      'sci-fi':    'ficção científica',
+      fantasy:     'fantasia',
+      action:      'ação',
+      crime:       'policial',
+      mystery:     'mistério',
+      animation:   'animação',
+      documentary: 'documentário',
+      musical:     'musical',
+      war:         'guerra',
+      western:     'faroeste',
+      arthouse:    'cinema de arte',
+    },
+    languageLabel: 'Idioma',
+    sameLanguageOnly: 'Apenas filmes em português',
+    sameLanguageOnlyHint: 'Caso contrário, as sugestões vêm do cinema mundial',
     submit:         'Encontrar Meu Filme',
     submitting:     'Encontrando seus filmes…',
     apiUnavailable: 'API indisponível',
